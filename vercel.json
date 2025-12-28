@@ -2,22 +2,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "installCommand": "npm install",
+  "installCommand": "npm install --legacy-peer-deps",
   "devCommand": "npm run dev",
-  "env": {
-    "VITE_SUPABASE_URL": "@vite_supabase_url",
-    "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key"
-  },
-  "build": {
-    "env": {
-      "DATABASE_URL": "@database_url",
-      "R2_ACCOUNT_ID": "@r2_account_id",
-      "R2_ACCESS_KEY_ID": "@r2_access_key_id",
-      "R2_SECRET_ACCESS_KEY": "@r2_secret_access_key",
-      "R2_BUCKET_NAME": "@r2_bucket_name",
-      "R2_PUBLIC_URL": "@r2_public_url"
-    }
-  },
   "rewrites": [
     {
       "source": "/(.*)",
