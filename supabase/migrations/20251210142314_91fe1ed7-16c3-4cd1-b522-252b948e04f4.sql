@@ -1,0 +1,265 @@
+-- Create Question Banks for each exam type and discipline
+INSERT INTO referee_question_banks (name, exam_type, discipline, version, description, is_active) VALUES
+('WKF Referee Exam - Kumite', 'referee', 'kumite', '2024', 'Official WKF Kumite Referee Examination Questions', true),
+('WKF Referee Exam - Kata', 'referee', 'kata', '2024', 'Official WKF Kata Referee Examination Questions', true),
+('WKF Coach Exam - Kumite', 'coach', 'kumite', '2024', 'Official WKF Kumite Coach Examination Questions', true),
+('WKF Coach Exam - Kata', 'coach', 'kata', '2024', 'Official WKF Kata Coach Examination Questions', true);
+
+-- Insert Referee Kumite Questions (from allquestionskumite_eng.pdf)
+INSERT INTO referee_questions (question_bank_id, question_number, question_text, correct_answer, category, rule_reference) 
+SELECT qb.id, q.question_number, q.question_text, q.correct_answer, q.category, q.rule_reference
+FROM referee_question_banks qb
+CROSS JOIN (VALUES
+  (1, 'Individual Kumite competitions of the WKF may only be held for competitors of 18 years and older.', false, 'Competition Structure', 'Art. 1'),
+  (2, 'Team Kumite competitions of the WKF may only be held with teams of three persons each.', false, 'Competition Structure', 'Art. 1'),
+  (3, 'The fighting area must be flat and devoid of hazard.', true, 'Competition Area', 'Art. 1'),
+  (4, 'The tatami matting that is used must be able to provide firm footing.', true, 'Competition Area', 'Art. 1'),
+  (5, 'The competition area must be a matted square, with sides of eight metres (measured from the outside).', true, 'Competition Area', 'Art. 1'),
+  (6, 'Arbitration Area is the area in which the Chief Arbitrator and the Arbitration Commission are seated.', true, 'Competition Area', 'Art. 1'),
+  (7, 'The Safety Zone or Safety Area is no more than 2m wide in all directions.', false, 'Competition Area', 'Art. 1'),
+  (8, 'When using two competition areas side by side, a common safety area of 3 metres must be maintained.', false, 'Competition Area', 'Art. 1'),
+  (9, 'Two mat areas may share a common safety or danger zone, as long as the common safety area or danger zone, is at least 2 metres wide.', true, 'Competition Area', 'Art. 1'),
+  (10, 'Extra Tatami mats should not be used to protect against walls.', false, 'Competition Area', 'Art. 1'),
+  (11, 'Each Match Area is to be equipped with a score board with electronic score display.', true, 'Equipment', 'Art. 1'),
+  (12, 'The Referee shall stand outside the competition area.', false, 'Officials Position', 'Art. 1'),
+  (13, 'Only techniques delivered from inside the match area can score.', true, 'Scoring', 'Art. 1'),
+  (14, 'Only techniques delivered from an in-bounds position can score.', true, 'Scoring', 'Art. 1'),
+  (15, 'The competitor must have at least one foot inside the match area for a technique to score.', true, 'Scoring', 'Art. 1'),
+  (16, 'One of the Judges should be positioned behind each competitor.', true, 'Officials Position', 'Art. 1'),
+  (17, 'A competitor may wear a plain white or blue mouth guard.', true, 'Equipment', 'Art. 2'),
+  (18, 'Competitors may only wear the regulation Kumite mitts as approved by the WKF.', true, 'Equipment', 'Art. 2'),
+  (19, 'A competitor may wear metallic hair grips.', false, 'Equipment', 'Art. 2'),
+  (20, 'Shin pads are optional for competitors.', false, 'Equipment', 'Art. 2'),
+  (21, 'Female competitors must wear additional WKF-approved chest guards.', true, 'Equipment', 'Art. 2'),
+  (22, 'Instep protectors are compulsory for all competitors.', true, 'Equipment', 'Art. 2'),
+  (23, 'The WKF approved groin guard is an optional requirement for male competitors.', false, 'Equipment', 'Art. 2'),
+  (24, 'Competitors must wear the approved body protection (body protector) in all individual Kumite bouts.', true, 'Equipment', 'Art. 2'),
+  (25, 'It is forbidden for competitors in any Kumite category to wear glasses or soft contact lenses during competition.', false, 'Equipment', 'Art. 2'),
+  (26, 'Competitors with poor vision may use soft contact lenses at their own risk.', true, 'Equipment', 'Art. 2'),
+  (27, 'Non-approved head guards and face shields or any other protective equipment not specifically approved by the WKF are forbidden.', true, 'Equipment', 'Art. 2'),
+  (28, 'If a competitor comes into the match area inappropriately dressed, he or she will not be immediately disqualified.', true, 'Equipment', 'Art. 2'),
+  (29, 'Coaches must wear some formal attire designated by their team.', true, 'Coaches', 'Art. 2'),
+  (30, 'Athletes must wear an approved electronic body protector in addition to any other protective equipment.', true, 'Equipment', 'Art. 2'),
+  (31, 'Coaches who wish to sit in the competition area during the bout must show their Accreditation to the Tatami Manager.', true, 'Coaches', 'Art. 2'),
+  (32, 'Referee Commission members do not need to be in the Arbitration Area.', false, 'Officials', 'Art. 3'),
+  (33, 'When a Referee Panel is used for Kumite, it should comprise of a Chief Judge and four Judges.', false, 'Officials', 'Art. 3'),
+  (34, 'During bouts, the Judges must use electronic flags.', true, 'Officials', 'Art. 3'),
+  (35, 'A bout supervisor or Kansa may not observe any other match area apart from the one to which he or she is allocated.', true, 'Officials', 'Art. 3'),
+  (36, 'It is possible that more than one Arbitrator (Kansa) can be assigned to monitor a bout.', true, 'Officials', 'Art. 3'),
+  (37, 'A three Judge system using only three corner Judges with no Referee can be used.', false, 'Officials', 'Art. 3'),
+  (38, 'The Match Supervisor (Kansa) shall use a red flag and a whistle.', true, 'Officials', 'Art. 3'),
+  (39, 'If at the end of an inconclusive bout, the score is equal, the electronic results system can be used to determine the winner.', false, 'Scoring', 'Art. 4'),
+  (40, 'A thrown opponent does not need to be held onto after being thrown.', false, 'Techniques', 'Art. 4'),
+  (41, 'In team matches, a drawn bout is possible.', true, 'Competition Structure', 'Art. 4'),
+  (42, 'Only the winner can score the point at Hantei for individual matches.', false, 'Scoring', 'Art. 4'),
+  (43, 'The score differential at the time YAME is called cannot affect the number of points allocated to each competitor.', false, 'Scoring', 'Art. 4'),
+  (44, 'Hantei decision in individual bouts will be on the basis of the better attitude, fighting spirit and strength demonstrated by the competitor.', true, 'Scoring', 'Art. 4'),
+  (45, 'First unopposed attack is one of the criteria for Hantei.', true, 'Scoring', 'Art. 4'),
+  (46, 'At Hantei, the number of escapes from the area (JOGAI) is not a criteria that is taken into account.', false, 'Scoring', 'Art. 4'),
+  (47, 'Competitor superiority at the time YAME was called is a criteria for Hantei.', true, 'Scoring', 'Art. 4'),
+  (48, 'In Team Kumite, before any bout or extra bout, the team representative must nominate the competitor to fight to the chief judge or Tatami Manager.', true, 'Competition Structure', 'Art. 4'),
+  (49, 'In the event of a tie on points and wins in a Team Kumite match, a deciding bout is required.', true, 'Competition Structure', 'Art. 4'),
+  (50, 'In a Team Kumite match, the team with the most wins will be declared the winner.', true, 'Competition Structure', 'Art. 4')
+) AS q(question_number, question_text, correct_answer, category, rule_reference)
+WHERE qb.exam_type = 'referee' AND qb.discipline = 'kumite';
+
+-- Continue with more Kumite referee questions
+INSERT INTO referee_questions (question_bank_id, question_number, question_text, correct_answer, category, rule_reference)
+SELECT qb.id, q.question_number, q.question_text, q.correct_answer, q.category, q.rule_reference
+FROM referee_question_banks qb
+CROSS JOIN (VALUES
+  (51, 'All scores are awarded on the basis of potential effect.', false, 'Scoring', 'Art. 6'),
+  (52, 'Scores must have good form, correct attitude and vigorous application.', true, 'Scoring', 'Art. 6'),
+  (53, 'Sports timing is a criterion for scoring techniques.', true, 'Scoring', 'Art. 6'),
+  (54, 'A technique that lands below the belt can score.', false, 'Scoring', 'Art. 6'),
+  (55, 'Techniques that land on the shoulder can score.', false, 'Scoring', 'Art. 6'),
+  (56, 'Scoring techniques that land on any part of the face, the head, and the neck count for the score.', true, 'Scoring', 'Art. 6'),
+  (57, 'Zanshin is the state of continued commitment.', true, 'Scoring', 'Art. 6'),
+  (58, 'A technique that is effective on its own without the opponent contributing to its success has good form.', true, 'Scoring', 'Art. 6'),
+  (59, 'Yuko is valued at two points.', false, 'Scoring', 'Art. 6'),
+  (60, 'Waza-ari is valued at two points.', true, 'Scoring', 'Art. 6'),
+  (61, 'Ippon is valued at three points.', true, 'Scoring', 'Art. 6'),
+  (62, 'A kick to the body is scored as Yuko.', false, 'Scoring', 'Art. 6'),
+  (63, 'A punch to any of the seven scoring areas is scored as Yuko.', true, 'Scoring', 'Art. 6'),
+  (64, 'A kick to the head scores Ippon.', true, 'Scoring', 'Art. 6'),
+  (65, 'In senior categories, a scoring technique delivered on a competitor who has been thrown, has fallen, or is down, will score Ippon.', true, 'Scoring', 'Art. 6'),
+  (66, 'A throw on its own cannot score if not followed by a scoring technique.', true, 'Scoring', 'Art. 6'),
+  (67, 'A Referee should give a score even when it is not certain that the technique actually reached a scoring area.', false, 'Scoring', 'Art. 6'),
+  (68, 'When awarding scores, judges must consider the speed, power and effect of the techniques.', true, 'Scoring', 'Art. 6'),
+  (69, 'If a technique is blocked but still touches a scoring area, it cannot score.', true, 'Scoring', 'Art. 6'),
+  (70, 'A scoring technique must show correct distance.', true, 'Scoring', 'Art. 6'),
+  (71, 'Category 1 offences are predominantly for attacks.', true, 'Penalties', 'Art. 8'),
+  (72, 'Category 2 offences are for failing to fight and non-combativity.', true, 'Penalties', 'Art. 8'),
+  (73, 'Mubobi can be awarded for Category 1 and Category 2 offences.', false, 'Penalties', 'Art. 8'),
+  (74, 'Excessive contact must always be penalised, even if the opponent contributed to it.', false, 'Penalties', 'Art. 8'),
+  (75, 'If a competitor cannot continue due to an injury caused by their own fault, they are disqualified.', true, 'Penalties', 'Art. 8'),
+  (76, 'Hansoku is given when a competitor has accumulated four warnings (Category 1 or 2) in the bout.', true, 'Penalties', 'Art. 8'),
+  (77, 'Shikkaku can only be given after consulting the Referee Commission.', false, 'Penalties', 'Art. 8'),
+  (78, 'Jogai means exit from the match area during a bout.', true, 'Penalties', 'Art. 8'),
+  (79, 'Grabbing the opponent for more than five seconds is not a Category 2 offence.', false, 'Penalties', 'Art. 8'),
+  (80, 'Speaking to or goading the opponent is a Category 2 offence.', true, 'Penalties', 'Art. 8'),
+  (81, 'Passivity, not attempting to engage in combat, is a Category 2 offence.', true, 'Penalties', 'Art. 8'),
+  (82, 'Clinching, wrestling, or unnecessary grabbing is a Category 2 offence.', true, 'Penalties', 'Art. 8'),
+  (83, 'Feigning injury to gain an advantage is a Category 2 offence.', true, 'Penalties', 'Art. 8'),
+  (84, 'Exaggerating an injury to influence the judges is a Category 2 offence.', true, 'Penalties', 'Art. 8'),
+  (85, 'If both competitors score at the same time (Aiuchi), neither can score.', true, 'Scoring', 'Art. 6'),
+  (86, 'Senshu is awarded for the first unopposed score in a match.', true, 'Scoring', 'Art. 6'),
+  (87, 'Senshu can be awarded for a score that occurs simultaneously with a penalty.', true, 'Scoring', 'Art. 6'),
+  (88, 'A competitor can still win by Hantei even if they do not have Senshu.', true, 'Scoring', 'Art. 6'),
+  (89, 'A competitor with Senshu will win if the bout ends in a tie.', true, 'Scoring', 'Art. 6'),
+  (90, 'Hansoku-Chui is a warning before disqualification.', true, 'Penalties', 'Art. 8'),
+  (91, 'Chukoku is a first-level warning.', true, 'Penalties', 'Art. 8'),
+  (92, 'Keikoku is the final warning before Hansoku.', false, 'Penalties', 'Art. 8'),
+  (93, 'Keikoku is given after two Chukoku.', true, 'Penalties', 'Art. 8'),
+  (94, 'A competitor receiving Hansoku has their opponent''s score increased to eight points.', true, 'Penalties', 'Art. 8'),
+  (95, 'Shikkaku results in disqualification from the entire tournament.', true, 'Penalties', 'Art. 8'),
+  (96, 'A referee can give a direct Hansoku without prior warnings for serious rule violations.', true, 'Penalties', 'Art. 8'),
+  (97, 'Attacking with the head, knees, or elbows is a Category 1 offence.', true, 'Penalties', 'Art. 8'),
+  (98, 'Open hand attacks to the face are prohibited.', true, 'Penalties', 'Art. 8'),
+  (99, 'Dangerous throws that cause the opponent to fall on their head or neck are prohibited.', true, 'Penalties', 'Art. 8'),
+  (100, 'Sweeping the supporting leg from the inside is permitted.', false, 'Techniques', 'Art. 8')
+) AS q(question_number, question_text, correct_answer, category, rule_reference)
+WHERE qb.exam_type = 'referee' AND qb.discipline = 'kumite';
+
+-- Insert Coach Kumite Questions (from Coach_Exam_Questions-Kumite.pdf)
+INSERT INTO referee_questions (question_bank_id, question_number, question_text, correct_answer, category, rule_reference)
+SELECT qb.id, q.question_number, q.question_text, q.correct_answer, q.category, q.rule_reference
+FROM referee_question_banks qb
+CROSS JOIN (VALUES
+  (1, 'Individual Kumite competitions may be organised separately for different weight divisions in both Male and Female categories.', true, 'Competition Structure', 'Art. 1'),
+  (2, 'A coach must obtain a valid Coach Licence from WKF before they can coach in WKF competitions.', true, 'Coaches', 'Art. 2'),
+  (3, 'Coaches are allowed to call "YAME" during a match.', false, 'Coaches', 'Art. 2'),
+  (4, 'A coach may protest a referee''s decision during the match.', false, 'Coaches', 'Art. 2'),
+  (5, 'Coaches can request video review in competitions where video review is available.', true, 'Coaches', 'Art. 2'),
+  (6, 'A coach who behaves badly can be removed from the competition area.', true, 'Coaches', 'Art. 2'),
+  (7, 'The competitor must bow when entering and leaving the competition area.', true, 'Etiquette', 'Art. 2'),
+  (8, 'Competitors must exchange a standing bow at the start and end of each match.', true, 'Etiquette', 'Art. 2'),
+  (9, 'A competitor may refuse to bow to the referee.', false, 'Etiquette', 'Art. 2'),
+  (10, 'The coach should ensure that the competitor''s equipment meets WKF requirements before the match.', true, 'Equipment', 'Art. 2'),
+  (11, 'If equipment becomes displaced during the bout, the competitor should adjust it immediately without stopping.', false, 'Equipment', 'Art. 2'),
+  (12, 'A competitor with an improperly tied belt can be penalised.', true, 'Equipment', 'Art. 2'),
+  (13, 'It is the coach''s responsibility to ensure competitors arrive on time for their matches.', true, 'Coaches', 'Art. 2'),
+  (14, 'A competitor who arrives late for a match is automatically disqualified.', false, 'Competition Structure', 'Art. 2'),
+  (15, 'A Sanbon (three-point) lead in Kumite does not end the bout.', false, 'Scoring', 'Art. 6'),
+  (16, 'A competitor who achieves an eight-point lead wins by Sanbon.', false, 'Scoring', 'Art. 6'),
+  (17, 'In the event of a tie, the competitor with Senshu wins.', true, 'Scoring', 'Art. 6'),
+  (18, 'A coach can give tactical advice to their competitor between rounds.', true, 'Coaches', 'Art. 2'),
+  (19, 'During a bout, a coach may not leave their designated position.', true, 'Coaches', 'Art. 2'),
+  (20, 'A coach may accompany the competitor onto the tatami during the match.', false, 'Coaches', 'Art. 2'),
+  (21, 'It is important for coaches to understand the scoring criteria in Kumite.', true, 'Scoring', 'Art. 6'),
+  (22, 'Coaches should teach that a good technique must have good form, sporting attitude, and vigorous application.', true, 'Scoring', 'Art. 6'),
+  (23, 'Awareness before, during, and after the attack is necessary for a score.', true, 'Scoring', 'Art. 6'),
+  (24, 'Correct distance means landing a blow with maximum force.', false, 'Scoring', 'Art. 6'),
+  (25, 'Correct timing means initiating a technique at exactly the best opportunity.', true, 'Scoring', 'Art. 6'),
+  (26, 'A technique delivered after YAME has been called can still score.', false, 'Scoring', 'Art. 6'),
+  (27, 'Coaches should educate competitors on the dangers of excessive contact.', true, 'Safety', 'Art. 8'),
+  (28, 'Category 1 penalties relate to techniques that cause excessive contact.', true, 'Penalties', 'Art. 8'),
+  (29, 'Category 2 penalties relate to feigning injury or exaggerating injury.', true, 'Penalties', 'Art. 8'),
+  (30, 'A competitor who loses by Kiken (withdrawal) cannot compete again in that tournament.', false, 'Competition Structure', 'Art. 9')
+) AS q(question_number, question_text, correct_answer, category, rule_reference)
+WHERE qb.exam_type = 'coach' AND qb.discipline = 'kumite';
+
+-- Insert Referee Kata Questions (from allquestionskata_eng.pdf)
+INSERT INTO referee_questions (question_bank_id, question_number, question_text, correct_answer, category, rule_reference)
+SELECT qb.id, q.question_number, q.question_text, q.correct_answer, q.category, q.rule_reference
+FROM referee_question_banks qb
+CROSS JOIN (VALUES
+  (1, 'A Kata competition takes place on a square matted area 8 metres on each side.', true, 'Competition Area', 'Art. 1'),
+  (2, 'Competitors must wear a plain white Karate Gi without stripes or piping.', true, 'Equipment', 'Art. 2'),
+  (3, 'National Emblems may not be worn on the Gi.', false, 'Equipment', 'Art. 2'),
+  (4, 'A competitor may wear a Gi jacket that reaches below the hips.', true, 'Equipment', 'Art. 2'),
+  (5, 'Female competitors may wear a plain white T-shirt beneath the Gi jacket.', true, 'Equipment', 'Art. 2'),
+  (6, 'Hair clips are permitted in Kata competition.', false, 'Equipment', 'Art. 2'),
+  (7, 'Glasses are permitted in Kata competition.', false, 'Equipment', 'Art. 2'),
+  (8, 'The belt must be tied correctly with a proper knot so it does not become loose.', true, 'Equipment', 'Art. 2'),
+  (9, 'Competitors must announce their Kata to the competition table.', true, 'Competition Procedure', 'Art. 3'),
+  (10, 'A competitor may perform any Kata of their choice.', false, 'Competition Procedure', 'Art. 3'),
+  (11, 'In team Kata, only three members must perform the Kata.', true, 'Competition Procedure', 'Art. 3'),
+  (12, 'In team Kata, the team must announce their Kata and Bunkai.', true, 'Competition Procedure', 'Art. 3'),
+  (13, 'Bunkai performance must be completed within 5 minutes.', true, 'Competition Procedure', 'Art. 3'),
+  (14, 'The Chief Judge can disqualify a competitor who bows incorrectly.', false, 'Competition Procedure', 'Art. 3'),
+  (15, 'Five judges are required for Kata competition.', false, 'Officials', 'Art. 3'),
+  (16, 'Seven judges are used in WKF Kata competition.', true, 'Officials', 'Art. 3'),
+  (17, 'Each judge gives a score between 5.0 and 10.0.', true, 'Scoring', 'Art. 4'),
+  (18, 'The highest and lowest scores are removed.', true, 'Scoring', 'Art. 4'),
+  (19, 'Scores must be given in increments of 0.2.', true, 'Scoring', 'Art. 4'),
+  (20, 'Athletic performance is 70% of the Kata score.', true, 'Scoring', 'Art. 4'),
+  (21, 'Technical performance is 30% of the Kata score.', true, 'Scoring', 'Art. 4'),
+  (22, 'Stances is one of the criteria for Technical Performance.', true, 'Scoring', 'Art. 4'),
+  (23, 'Techniques include kicks, punches, strikes, and blocks.', true, 'Scoring', 'Art. 4'),
+  (24, 'Transitions include stability, balance, and timing of techniques.', true, 'Scoring', 'Art. 4'),
+  (25, 'Athletic Performance includes strength, speed, and balance.', true, 'Scoring', 'Art. 4'),
+  (26, 'Rhythm and timing are not considered in Athletic Performance.', false, 'Scoring', 'Art. 4'),
+  (27, 'Expression of the meaning of the Kata is part of Athletic Performance.', true, 'Scoring', 'Art. 4'),
+  (28, 'A competitor is disqualified if they do not return to the starting point.', false, 'Penalties', 'Art. 5'),
+  (29, 'A competitor who stops during the Kata is disqualified.', true, 'Penalties', 'Art. 5'),
+  (30, 'A competitor who performs a different Kata than announced is disqualified.', true, 'Penalties', 'Art. 5'),
+  (31, 'A competitor who performs an extra movement is disqualified.', false, 'Penalties', 'Art. 5'),
+  (32, 'A competitor whose Gi falls off during performance is disqualified.', true, 'Penalties', 'Art. 5'),
+  (33, 'If the belt comes undone during Kata, the competitor is disqualified.', true, 'Penalties', 'Art. 5'),
+  (34, 'A competitor who fails to bow is disqualified.', false, 'Penalties', 'Art. 5'),
+  (35, 'Disqualification is represented by all judges showing a cross signal.', true, 'Penalties', 'Art. 5'),
+  (36, 'A competitor may repeat a Kata they performed in an earlier round.', false, 'Competition Procedure', 'Art. 6'),
+  (37, 'In each round, the competitor must perform a different Kata.', true, 'Competition Procedure', 'Art. 6'),
+  (38, 'The Kata list is determined by the WKF.', true, 'Competition Procedure', 'Art. 6'),
+  (39, 'Tokui Kata can only be selected from the approved WKF list.', true, 'Competition Procedure', 'Art. 6'),
+  (40, 'Shitei Kata are compulsory Kata.', true, 'Competition Procedure', 'Art. 6'),
+  (41, 'In Kata, the competitor should demonstrate understanding of the techniques being used.', true, 'Performance', 'Art. 4'),
+  (42, 'Focus (Kime) is not important in Kata performance.', false, 'Performance', 'Art. 4'),
+  (43, 'Speed should vary to demonstrate the different applications of the techniques.', true, 'Performance', 'Art. 4'),
+  (44, 'The competitor must show concentration throughout the performance.', true, 'Performance', 'Art. 4'),
+  (45, 'Breathing should be inaudible throughout the Kata.', false, 'Performance', 'Art. 4'),
+  (46, 'Eye contact (Chakugan) should be maintained in the appropriate direction.', true, 'Performance', 'Art. 4'),
+  (47, 'Kata should be performed with realistic combat attitude.', true, 'Performance', 'Art. 4'),
+  (48, 'In team Kata Bunkai, weapons may be used.', false, 'Team Kata', 'Art. 7'),
+  (49, 'Team Kata Bunkai must demonstrate the practical application of the Kata techniques.', true, 'Team Kata', 'Art. 7'),
+  (50, 'Team members must be of the same gender.', true, 'Team Kata', 'Art. 7')
+) AS q(question_number, question_text, correct_answer, category, rule_reference)
+WHERE qb.exam_type = 'referee' AND qb.discipline = 'kata';
+
+-- Insert Coach Kata Questions (from Coach_Exam_Questions-Kata.pdf)
+INSERT INTO referee_questions (question_bank_id, question_number, question_text, correct_answer, category, rule_reference)
+SELECT qb.id, q.question_number, q.question_text, q.correct_answer, q.category, q.rule_reference
+FROM referee_question_banks qb
+CROSS JOIN (VALUES
+  (1, 'Coaches must ensure their competitors know the list of approved Kata.', true, 'Coaches', 'Art. 6'),
+  (2, 'A coach may call out instructions during Kata performance.', false, 'Coaches', 'Art. 2'),
+  (3, 'The coach is responsible for registering the competitor''s chosen Kata.', false, 'Coaches', 'Art. 3'),
+  (4, 'Coaches should train competitors to maintain proper breathing throughout Kata.', true, 'Training', 'Art. 4'),
+  (5, 'A competitor can perform any Kata not on the WKF list if the coach permits.', false, 'Competition Procedure', 'Art. 6'),
+  (6, 'Coaches should ensure competitors understand the scoring criteria.', true, 'Scoring', 'Art. 4'),
+  (7, 'Technical performance accounts for 30% of the total score.', true, 'Scoring', 'Art. 4'),
+  (8, 'Athletic performance accounts for 70% of the total score.', true, 'Scoring', 'Art. 4'),
+  (9, 'Coaches should teach proper stances as part of technical performance.', true, 'Training', 'Art. 4'),
+  (10, 'Strength, speed, and balance are part of athletic performance.', true, 'Scoring', 'Art. 4'),
+  (11, 'A competitor who loses balance during Kata will not be disqualified.', true, 'Performance', 'Art. 5'),
+  (12, 'Stopping during the Kata results in disqualification.', true, 'Penalties', 'Art. 5'),
+  (13, 'The Gi must be properly arranged before starting the Kata.', true, 'Equipment', 'Art. 2'),
+  (14, 'Hair must be tied back and should not obstruct the face.', true, 'Equipment', 'Art. 2'),
+  (15, 'Coaches can request a score review in Kata competition.', false, 'Coaches', 'Art. 4'),
+  (16, 'In team Kata, all three members must start and finish at the same time.', true, 'Team Kata', 'Art. 7'),
+  (17, 'Bunkai is optional in team Kata competition.', false, 'Team Kata', 'Art. 7'),
+  (18, 'The Bunkai must demonstrate practical application of techniques from the Kata.', true, 'Team Kata', 'Art. 7'),
+  (19, 'Team Kata Bunkai has a time limit of 5 minutes.', true, 'Team Kata', 'Art. 7'),
+  (20, 'Protective equipment must be worn during Bunkai.', false, 'Team Kata', 'Art. 7'),
+  (21, 'Contact is not permitted in Bunkai demonstrations.', true, 'Team Kata', 'Art. 7'),
+  (22, 'Coaches should train competitors to show proper Kime in each technique.', true, 'Training', 'Art. 4'),
+  (23, 'The pace of the Kata should never vary.', false, 'Performance', 'Art. 4'),
+  (24, 'Coaches should ensure competitors understand the meaning of each movement.', true, 'Training', 'Art. 4'),
+  (25, 'A competitor may request to restart the Kata if they make a mistake.', false, 'Competition Procedure', 'Art. 5'),
+  (26, 'Eye contact should follow the imaginary opponents throughout the Kata.', true, 'Performance', 'Art. 4'),
+  (27, 'Competitors must demonstrate realistic fighting spirit throughout the Kata.', true, 'Performance', 'Art. 4'),
+  (28, 'Kata can be performed facing any direction.', false, 'Competition Procedure', 'Art. 3'),
+  (29, 'The starting position must face the Chief Judge.', true, 'Competition Procedure', 'Art. 3'),
+  (30, 'A competitor who uses the wrong Kata name is disqualified.', false, 'Competition Procedure', 'Art. 3')
+) AS q(question_number, question_text, correct_answer, category, rule_reference)
+WHERE qb.exam_type = 'coach' AND qb.discipline = 'kata';
+
+-- Insert Rule Documents
+INSERT INTO referee_rule_documents (title, category, description, version, effective_date, display_order) VALUES
+('WKF Kumite Competition Rules 2024', 'kumite', 'Official WKF rules governing Kumite competitions', '2024', '2024-01-01', 1),
+('WKF Kata Competition Rules 2024', 'kata', 'Official WKF rules governing Kata competitions', '2024', '2024-01-01', 2),
+('WKF Para Karate Competition Rules', 'para_karate', 'Official WKF rules for Para Karate competitions', '2024', '2024-01-01', 3),
+('WKF World Ranking Rules', 'ranking', 'Rules governing the WKF World Ranking system', '2024', '2024-01-01', 4),
+('WKF Protocol Rules', 'protocol', 'Official protocol and ceremony rules for WKF events', '2017', '2017-01-01', 5),
+('WKF Disciplinary and Ethics Code', 'disciplinary', 'Code of conduct and disciplinary procedures', '2024', '2024-01-01', 6);
