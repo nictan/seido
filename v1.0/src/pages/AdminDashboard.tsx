@@ -1,0 +1,430 @@
+
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { Header } from "@/components/layout/Header";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Loader2, RefreshCw, Shield, GraduationCap, Building2, Trash2, Search, Filter } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { AdminResetPasswordDialog } from "@/components/admin/AdminResetPasswordDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
+type AdminUser = {
+    profileId: string;
+    userId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    dojo: string;
+    isAdmin: boolean;
+    isInstructor: boolean;
+    isStudent: boolean;
+};
+
+export default function AdminDashboard() {
+    const { session, profile, loading: authLoading } = useAuth();
+    const { toast } = useToast();
+    const [users, setUsers] = useState<AdminUser[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Search & Filter State
+    const [searchQuery, setSearchQuery] = useState("");
+    const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "instructor" | "student">("all");
+    const [dojoFilter, setDojoFilter] = useState<"all" | "HQ" | "TP" | "SIT">("all");
+
+    // Edit User Dialog State
+    const [editUserOpen, setEditUserOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+    const [editFormData, setEditFormData] = useState({
+        isAdmin: false,
+        isInstructor: false,
+        dojo: 'HQ'
+    });
+
+    // Delete Dialog State
+    const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
+
+    const fetchUsers = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch('/api/admin/users', {
+                headers: { Authorization: `Bearer ${session?.access_token}` },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setUsers(data);
+            } else {
+                toast({ title: "Error", description: "Failed to fetch users", variant: "destructive" });
+            }
+        } catch (error) {
+            console.error("Failed to fetch users", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (session?.access_token && profile?.is_admin) {
+            fetchUsers();
+        } else if (!authLoading && !profile?.is_admin) {
+            setLoading(false); // Stop loading if not admin
+        }
+    }, [session, profile, authLoading]);
+
+    const handleEditUser = (user: AdminUser) => {
+        setEditingUser(user);
+        setEditFormData({
+            isAdmin: user.isAdmin,
+            isInstructor: user.isInstructor,
+            dojo: user.dojo || 'HQ'
+        });
+        setEditUserOpen(true);
+    };
+
+    const handleSaveUser = async () => {
+        if (!editingUser) return;
+
+        try {
+            const res = await fetch('/api/admin/users', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({
+                    profileId: editingUser.profileId,
+                    ...editFormData
+                })
+            });
+
+            if (res.ok) {
+                toast({ title: "Success", description: "User permissions updated." });
+                setEditUserOpen(false);
+                fetchUsers();
+            } else {
+                toast({ title: "Error", description: "Failed to update user.", variant: "destructive" });
+            }
+        } catch (error) {
+            toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
+        }
+    };
+
+    const confirmDeleteUser = (user: AdminUser) => {
+        setUserToDelete(user);
+        setDeleteAlertOpen(true);
+    };
+
+    const handleDeleteUser = async () => {
+        if (!userToDelete) return;
+
+        try {
+            const res = await fetch('/api/admin/users', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({
+                    userId: userToDelete.userId,
+                    profileId: userToDelete.profileId
+                })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                toast({ title: "Deleted", description: "User has been permanently removed." });
+                setDeleteAlertOpen(false);
+                setUserToDelete(null);
+                fetchUsers();
+            } else {
+                toast({ title: "Error", description: data.error || "Failed to delete user.", variant: "destructive" });
+            }
+        } catch (error) {
+            toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
+        }
+    };
+
+    // Derived Statistics
+    const totalUsers = users.length;
+    const totalInstructors = users.filter(u => u.isInstructor).length;
+    const activeDojos = Array.from(new Set(users.map(u => u.dojo).filter(Boolean))).length;
+
+    // Filter Logic
+    const filteredUsers = users.filter(user => {
+        // Search
+        const search = searchQuery.toLowerCase();
+        const matchesSearch =
+            user.firstName.toLowerCase().includes(search) ||
+            user.lastName.toLowerCase().includes(search) ||
+            user.email.toLowerCase().includes(search);
+
+        // Role Filter
+        let matchesRole = true;
+        if (roleFilter === 'admin') matchesRole = user.isAdmin;
+        if (roleFilter === 'instructor') matchesRole = user.isInstructor;
+        if (roleFilter === 'student') matchesRole = user.isStudent; // Usually everyone is a student, can be refined
+
+        // Dojo Filter
+        let matchesDojo = true;
+        if (dojoFilter !== 'all') matchesDojo = user.dojo === dojoFilter;
+
+        return matchesSearch && matchesRole && matchesDojo;
+    });
+
+    if (authLoading || loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
+
+    if (!profile?.is_admin) {
+        return (
+            <div className="min-h-screen bg-background">
+                <Header />
+                <div className="p-8 text-center text-red-500">Access Denied. Admin privileges required.</div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-background">
+            <Header />
+            <div className="container mx-auto p-6 space-y-8 animate-in fade-in duration-500">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+                        <p className="text-muted-foreground mt-1">Platform administration and user management.</p>
+                    </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                            <Shield className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{totalUsers}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Instructors</CardTitle>
+                            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{totalInstructors}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Active Dojos</CardTitle>
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{activeDojos}</div>
+                            <p className="text-xs text-muted-foreground">Across {activeDojos} locations</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div>
+                                <CardTitle>User Management</CardTitle>
+                                <CardDescription>Manage user roles, permissions and assignments.</CardDescription>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={fetchUsers}>
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Refresh
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-col md:flex-row gap-4 mb-6">
+                            <div className="relative w-full md:w-1/3">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search users..."
+                                    className="pl-8"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex gap-2 w-full md:w-auto">
+                                <Select value={roleFilter} onValueChange={(v: any) => setRoleFilter(v)}>
+                                    <SelectTrigger className="w-[140px]">
+                                        <div className="flex items-center gap-2">
+                                            <Filter className="h-4 w-4" />
+                                            <SelectValue placeholder="Role" />
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Roles</SelectItem>
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                        <SelectItem value="instructor">Instructor</SelectItem>
+                                        <SelectItem value="student">Student</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <Select value={dojoFilter} onValueChange={(v: any) => setDojoFilter(v)}>
+                                    <SelectTrigger className="w-[140px]">
+                                        <div className="flex items-center gap-2">
+                                            <Building2 className="h-4 w-4" />
+                                            <SelectValue placeholder="Dojo" />
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Dojos</SelectItem>
+                                        <SelectItem value="HQ">HQ</SelectItem>
+                                        <SelectItem value="TP">TP</SelectItem>
+                                        <SelectItem value="SIT">SIT</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Email</TableHead>
+                                        <TableHead>Dojo</TableHead>
+                                        <TableHead>Roles</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredUsers.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                                No users found.
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        filteredUsers.map((user) => (
+                                            <TableRow key={user.profileId}>
+                                                <TableCell className="font-medium">{user.firstName} {user.lastName}</TableCell>
+                                                <TableCell>{user.email}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline">{user.dojo || '-'}</Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex gap-1">
+                                                        {user.isAdmin && <Badge className="bg-red-600">Admin</Badge>}
+                                                        {user.isInstructor && <Badge className="bg-blue-600">Instructor</Badge>}
+                                                        {user.isStudent && <Badge variant="secondary">Student</Badge>}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end items-center gap-2">
+                                                        <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)}>
+                                                            Edit Roles
+                                                        </Button>
+                                                        <AdminResetPasswordDialog
+                                                            studentId={user.userId}
+                                                            studentName={`${user.firstName} ${user.lastName}`}
+                                                            studentEmail={user.email}
+                                                        />
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                            onClick={() => confirmDeleteUser(user)}
+                                                            title="Delete User"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                        <div className="mt-4 text-xs text-muted-foreground text-center">
+                            Showing {filteredUsers.length} of {users.length} users
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit User: {editingUser?.firstName} {editingUser?.lastName}</DialogTitle>
+                        <DialogDescription>Modify permissions and assignments.</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-6">
+                        <div className="flex items-center justify-between space-x-2">
+                            <Label htmlFor="is-admin" className="flex flex-col space-y-1">
+                                <span>Administrator</span>
+                                <span className="font-normal text-xs text-muted-foreground"> Grants full access to this dashboard.</span>
+                            </Label>
+                            <Switch
+                                id="is-admin"
+                                checked={editFormData.isAdmin}
+                                onCheckedChange={(c) => setEditFormData({ ...editFormData, isAdmin: c })}
+                            />
+                        </div>
+                        <div className="flex items-center justify-between space-x-2">
+                            <Label htmlFor="is-instructor" className="flex flex-col space-y-1">
+                                <span>Instructor</span>
+                                <span className="font-normal text-xs text-muted-foreground"> Grants access to Grading Management.</span>
+                            </Label>
+                            <Switch
+                                id="is-instructor"
+                                checked={editFormData.isInstructor}
+                                onCheckedChange={(c) => setEditFormData({ ...editFormData, isInstructor: c })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Dojo Assignment</Label>
+                            <Select
+                                value={editFormData.dojo}
+                                onValueChange={(v) => setEditFormData({ ...editFormData, dojo: v })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="HQ">Headquarters (HQ)</SelectItem>
+                                    <SelectItem value="TP">Temasek Polytechnic (TP)</SelectItem>
+                                    <SelectItem value="SIT">Singapore Institute of Technology (SIT)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setEditUserOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveUser}>Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete
+                            <strong> {userToDelete?.firstName} {userToDelete?.lastName}</strong> and remove their account, profile, grading history, and all associated data.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteUser} className="bg-red-600 hover:bg-red-700">Delete User</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
+    );
+}

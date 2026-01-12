@@ -2,12 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Header } from "@/components/layout/Header";
-import { useAuth } from "@/hooks/useAuth";
+
 import { User, ClipboardList, GraduationCap, ArrowRight } from "lucide-react";
 
 export default function Index() {
     const navigate = useNavigate();
-    const { user } = useAuth();
+
 
     return (
         <div className="min-h-screen bg-background">

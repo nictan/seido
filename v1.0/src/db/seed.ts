@@ -1,5 +1,5 @@
 import { db } from './index';
-import { profiles } from './schema';
+import { profiles, karateProfiles } from './schema';
 import { eq } from 'drizzle-orm';
 
 async function main() {
@@ -18,7 +18,7 @@ async function main() {
     }
 
     // Insert mock profile
-    await db.insert(profiles).values({
+    const [newProfile] = await db.insert(profiles).values({
         userId: mockUserId,
         firstName: 'Nicholas',
         lastName: 'Student',
@@ -26,17 +26,19 @@ async function main() {
         mobile: '91234567',
         dateOfBirth: '1995-05-15',
         gender: 'Male',
-        dojo: 'HQ',
-        isStudent: true,
-        remarks: 'Enthusiastic seed user',
-        currentGrade: {
-            kyu: 10,
-            dan: null,
-            belt_color: 'White',
-            effective_date: '2024-01-01'
-        },
+        emergencyContactName: 'Test Contact',
+        emergencyContactRelationship: 'Parent',
+        emergencyContactPhone: '99999999',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+    }).returning();
+
+    // Insert karate profile
+    await db.insert(karateProfiles).values({
+        profileId: newProfile.id,
+        dojo: 'HQ',
+        isStudent: true,
+        isInstructor: false,
     });
 
     console.log('Database seeded successfully!');

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { Profile } from "@/types/database";
 import { authClient } from "@/lib/auth";
 
-type User = { id: string; email?: string };
+type User = { id: string; email?: string; name?: string };
 type Session = { user: User; access_token: string };
 
 interface AuthContextType {
@@ -16,11 +16,25 @@ interface AuthContextType {
   forgetPassword: (email: string) => Promise<{ error: any }>;
   resetPassword: (newPassword: string) => Promise<{ error: any }>;
   refreshProfile: () => Promise<void>;
+  createProfile: (data: any) => Promise<{ error: any }>;
+  updateProfile: (updates: any) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // Helper to find the JWT in the session object
+  const getSmartToken = (session: any) => {
+    const potentialKeys = ['accessToken', 'access_token', 'idToken', 'id_token', 'jwt', 'token'];
+    for (const key of potentialKeys) {
+      const val = session?.[key];
+      if (typeof val === 'string' && val.startsWith('ey')) {
+        console.log(`getSmartToken: Found JWT in '${key}'`);
+        return val;
+      }
+    }
+    return session?.token || "";
+  };
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -45,17 +59,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           gender: data.gender,
           email: data.email,
           mobile: data.mobile,
-          dojo: data.dojo,
           remarks: data.remarks,
           profile_picture_url: data.profilePictureUrl,
-          is_student: data.isStudent,
-          is_instructor: data.isInstructor,
-          is_admin: data.isAdmin,
-          current_rank_id: data.currentRankId,
-          rank_effective_date: data.rankEffectiveDate,
-          current_grade: data.currentGrade,
+          emergency_contact_name: data.emergencyContactName,
+          emergency_contact_relationship: data.emergencyContactRelationship,
+          emergency_contact_phone: data.emergencyContactPhone,
+          emergency_contact_email: data.emergencyContactEmail,
           created_at: data.createdAt,
-          updated_at: data.updatedAt
+          updated_at: data.updatedAt,
+          is_admin: data.isAdmin,
+          karate_profile: data.karateProfile,
+          rank_histories: data.rankHistories
         };
         setProfile(mappedProfile);
       } else {
@@ -70,13 +84,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const { data } = await authClient.getSession();
+        const { data, error } = await authClient.getSession();
+        if (error) {
+          console.error("checkSession error:", error);
+        }
         if (data?.session) {
           const { user: authUser, session: authSession } = data;
-          const mappedUser: User = { id: authUser.id, email: authUser.email };
+          console.log("Auth Check - Session Keys:", Object.keys(authSession));
+          console.log("Auth Check - Token Start:", authSession.token?.substring(0, 10));
+
+          const mappedUser: User = { id: authUser.id, email: authUser.email, name: authUser.name };
+
+
+
+          // Prioritize Opaque Token (authSession.token) over JWT for stability
+          const validToken = authSession.token || "";
+
           setUser(mappedUser);
-          setSession({ user: mappedUser, access_token: authSession.token || "neon-token" });
-          await fetchProfile(authUser.id, authSession.token);
+          setSession({ user: mappedUser, access_token: validToken });
+          await fetchProfile(authUser.id, validToken);
         }
       } catch (err) {
         console.error("Auth check failed", err);
@@ -93,10 +119,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) return { error: error.message || "Login failed" };
 
       if (data && data.user) {
-        const mappedUser: User = { id: data.user.id, email: data.user.email };
+
+
+        const smartToken = getSmartToken((data as any).session || { token: data.token });
+        console.log("SignIn - SmartToken:", smartToken?.substring(0, 20));
+
+        // Prefer the Opaque Token (session.token) for better compatibility with server-side DB checks
+        // as JWT verification requires JWKS setup which might be missing/flaky.
+        const token = smartToken || "";
+
+        const mappedUser: User = { id: data.user.id, email: data.user.email, name: data.user.name };
         setUser(mappedUser);
-        setSession({ user: mappedUser, access_token: data.token });
-        await fetchProfile(data.user.id, data.token);
+        setSession({ user: mappedUser, access_token: token || "" });
+        await fetchProfile(data.user.id, token || "");
       }
       return { error: null };
     } catch (error: any) {
@@ -115,12 +150,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) return { error: error.message || "Signup failed" };
 
       if (data && data.user) {
+
+
+        const smartToken = getSmartToken((data as any).session || { token: data.token });
+
+        const token = smartToken || "";
+
         try {
           await fetch('/api/profile', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${data.token}`
+              'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
               userId: data.user.id,
@@ -133,10 +174,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error("Failed to create profile record", profileError);
         }
 
-        const mappedUser: User = { id: data.user.id, email: data.user.email };
+        const mappedUser: User = { id: data.user.id, email: data.user.email, name: data.user.name };
         setUser(mappedUser);
-        setSession({ user: mappedUser, access_token: data.token || "" });
-        await fetchProfile(data.user.id, data.token || undefined);
+        setSession({ user: mappedUser, access_token: token || "" });
+        await fetchProfile(data.user.id, token || "");
       }
       return { error: null };
     } catch (error: any) {
@@ -189,6 +230,87 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const mapSnakeToCamel = (obj: any) => {
+    const mapping: Record<string, string> = {
+      first_name: 'firstName',
+      last_name: 'lastName',
+      date_of_birth: 'dateOfBirth',
+      emergency_contact_name: 'emergencyContactName',
+      emergency_contact_relationship: 'emergencyContactRelationship',
+      emergency_contact_phone: 'emergencyContactPhone',
+      emergency_contact_email: 'emergencyContactEmail',
+      profile_picture_url: 'profilePictureUrl',
+    };
+    const mapped: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const mappedKey = mapping[key] || key;
+      mapped[mappedKey] = value;
+    }
+    return mapped;
+  };
+
+  const createProfile = async (profileData: any) => {
+    if (!user || !session?.access_token) {
+      console.warn("createProfile: Missing user or access token", { hasUser: !!user, hasToken: !!session?.access_token });
+      return { error: "Not authenticated" };
+    }
+    console.log('createProfile: Using access token (first 20 chars):', session.access_token.substring(0, 20) + '...');
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify(mapSnakeToCamel({
+          user_id: user.id,
+          ...profileData
+        }))
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.error || "Failed to create profile" };
+      }
+
+      await refreshProfile();
+      return { error: null };
+    } catch (error: any) {
+      return { error: error.message || "An error occurred during profile creation" };
+    }
+  };
+
+  const updateProfile = async (updates: any) => {
+    if (!user) return { error: "Not authenticated" };
+    try {
+      // If updating userId (admin reassignment), we need to handle that mapping
+      const { user_id, ...rest } = updates;
+      const body = {
+        userId: user_id || updates.userId || user.id,
+        ...mapSnakeToCamel(rest)
+      };
+
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.error || "Failed to update profile" };
+      }
+
+      await refreshProfile();
+      return { error: null };
+    } catch (error: any) {
+      return { error: error.message || "An error occurred during profile update" };
+    }
+  };
+
   const value = {
     user,
     session,
@@ -200,6 +322,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     forgetPassword,
     resetPassword,
     refreshProfile,
+    createProfile,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { LogOut, User, ArrowRight, GraduationCap } from "lucide-react";
+import { LogOut, User, ArrowRight, GraduationCap, ClipboardList } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import seidoLogo from "@/assets/seido-logo.png";
 
@@ -36,6 +36,13 @@ export function Header() {
               <GraduationCap className="h-4 w-4" />
               Referee Prep
             </Link>
+            <Link
+              to="/grading"
+              className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors flex items-center gap-2"
+            >
+              <ClipboardList className="h-4 w-4" />
+              Grading
+            </Link>
           </nav>
         </div>
 
@@ -48,7 +55,7 @@ export function Header() {
                   <span className="font-medium">
                     {profile.first_name} {profile.last_name}
                   </span>
-                  {profile.is_instructor && (
+                  {profile.karate_profile?.isInstructor && (
                     <button
                       onClick={() => navigate("/instructor")}
                       className="grade-badge bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer flex items-center gap-1"
@@ -73,6 +80,21 @@ export function Header() {
                 </span>
               )}
             </div>
+            {user && (
+              <>
+                <Link to="/profile" className="text-sm font-medium transition-colors hover:text-primary">
+                  Profile
+                </Link>
+                <Link to="/grading" className="text-sm font-medium transition-colors hover:text-primary">
+                  Grading
+                </Link>
+                {profile?.karate_profile?.isInstructor && (
+                  <Link to="/instructor" className="text-sm font-medium transition-colors hover:text-primary text-blue-600">
+                    Instructor
+                  </Link>
+                )}
+              </>
+            )}
             <Button variant="outline" size="sm" onClick={handleSignOut}>
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out

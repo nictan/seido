@@ -9,6 +9,9 @@ import StudentProfile from "./pages/StudentProfile";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
+import { MyGrading } from "./pages/MyGrading";
+import InstructorDashboard from "./pages/InstructorDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import { AuthGuard } from "./components/auth/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -20,7 +23,9 @@ const App = () => (
                 <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
-                    <Route path="/grading" element={<AuthGuard><Profile /></AuthGuard>} />
+                    <Route path="/grading" element={<AuthGuard><MyGrading /></AuthGuard>} />
+                    <Route path="/instructor" element={<AuthGuard><InstructorDashboard /></AuthGuard>} />
+                    <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/student/:userId" element={<AuthGuard><StudentProfile /></AuthGuard>} />

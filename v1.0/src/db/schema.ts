@@ -1,7 +1,7 @@
-import { pgTable, check, uuid, text, timestamp, integer, foreignKey, pgPolicy, boolean, unique, index, date, pgEnum, jsonb } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"
+import { pgTable, check, uuid, text, timestamp, integer, foreignKey, pgPolicy, boolean, unique, index, date, pgEnum } from "drizzle-orm/pg-core"
+import { sql, relations } from "drizzle-orm"
 
-export const applicationStatus = pgEnum("application_status", ['Submitted', 'Approved', 'Rejected'])
+export const applicationStatus = pgEnum("application_status", ['Submitted', 'Approved', 'Rejected', 'Withdrawn', 'Void'])
 export const dojoType = pgEnum("dojo_type", ['TP', 'SIT', 'HQ'])
 export const examType = pgEnum("exam_type", ['referee', 'coach'])
 export const genderType = pgEnum("gender_type", ['Male', 'Female', 'Other'])
@@ -18,12 +18,8 @@ export const profiles = pgTable('profiles', {
     mobile: text('mobile'),
     dateOfBirth: date('date_of_birth'),
     gender: genderType('gender').default('Other'),
-    dojo: dojoType('dojo').default('HQ'),
     remarks: text('remarks'),
     profilePictureUrl: text('profile_picture_url'),
-
-    isStudent: boolean('is_student').default(true),
-    isInstructor: boolean('is_instructor').default(false),
     isAdmin: boolean('is_admin').default(false),
 
     // Emergency Contact
@@ -32,21 +28,129 @@ export const profiles = pgTable('profiles', {
     emergencyContactPhone: text('emergency_contact_phone'),
     emergencyContactEmail: text('emergency_contact_email'),
 
-    // Rank/Grade
-    currentRankId: uuid('current_rank_id'),
-    rankEffectiveDate: date('rank_effective_date'),
-    currentGrade: jsonb('current_grade'),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});
 
+export const karateProfiles = pgTable('karate_profiles', {
+    id: uuid('id').defaultRandom().primaryKey().notNull(),
+    profileId: uuid('profile_id').notNull().unique(),
+    dojo: dojoType('dojo').default('HQ').notNull(),
+    isStudent: boolean('is_student').default(true),
+    isInstructor: boolean('is_instructor').default(false),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
     foreignKey({
-        columns: [table.currentRankId],
-        foreignColumns: [ranks.id],
-        name: "profiles_current_rank_id_fkey"
-    }).onDelete("set null"),
+        columns: [table.profileId],
+        foreignColumns: [profiles.id],
+        name: "karate_profiles_profile_id_fkey"
+    }).onDelete("cascade"),
 ]);
 
+export const rankHistories = pgTable('rank_histories', {
+    id: uuid('id').defaultRandom().primaryKey().notNull(),
+    profileId: uuid('profile_id').notNull(),
+    rankId: uuid('rank_id').notNull(),
+    effectiveDate: date('effective_date').notNull(),
+    isCurrent: boolean('is_current').default(true).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+    foreignKey({
+        columns: [table.profileId],
+        foreignColumns: [profiles.id],
+        name: "rank_histories_profile_id_fkey"
+    }).onDelete("cascade"),
+    foreignKey({
+        columns: [table.rankId],
+        foreignColumns: [ranks.id],
+        name: "rank_histories_rank_id_fkey"
+    }).onDelete("cascade"),
+    index("idx_rank_histories_profile_id").on(table.profileId),
+]);
+
+export const gradingApplications = pgTable('grading_applications', {
+    id: uuid('id').defaultRandom().primaryKey().notNull(),
+    gradingPeriodId: uuid('grading_period_id').notNull(),
+    profileId: uuid('profile_id').notNull(),
+    currentRankId: uuid('current_rank_id').notNull(),
+    proposedRankId: uuid('proposed_rank_id').notNull(),
+    status: applicationStatus('status').default('Submitted').notNull(),
+    gradingStatus: gradingStatus('grading_status').default('Pending').notNull(),
+    gradingNotes: text('grading_notes'),
+    instructorNotes: text('instructor_notes'),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+    foreignKey({
+        columns: [table.gradingPeriodId],
+        foreignColumns: [gradingPeriods.id],
+        name: "grading_applications_period_id_fkey"
+    }).onDelete("cascade"),
+    foreignKey({
+        columns: [table.profileId],
+        foreignColumns: [profiles.id],
+        name: "grading_applications_profile_id_fkey"
+    }).onDelete("cascade"),
+    foreignKey({
+        columns: [table.currentRankId],
+        foreignColumns: [ranks.id],
+        name: "grading_applications_current_rank_id_fkey"
+    }),
+    foreignKey({
+        columns: [table.proposedRankId],
+        foreignColumns: [ranks.id],
+        name: "grading_applications_proposed_rank_id_fkey"
+    }),
+]);
+
+export const profilesRelations = relations(profiles, ({ one, many }) => ({
+    karateProfile: one(karateProfiles, {
+        fields: [profiles.id],
+        references: [karateProfiles.profileId],
+    }),
+    rankHistories: many(rankHistories),
+    gradingApplications: many(gradingApplications),
+}));
+
+export const karateProfilesRelations = relations(karateProfiles, ({ one }) => ({
+    profile: one(profiles, {
+        fields: [karateProfiles.profileId],
+        references: [profiles.id],
+    }),
+}));
+
+export const rankHistoriesRelations = relations(rankHistories, ({ one }) => ({
+    profile: one(profiles, {
+        fields: [rankHistories.profileId],
+        references: [profiles.id],
+    }),
+    rank: one(ranks, {
+        fields: [rankHistories.rankId],
+        references: [ranks.id],
+    }),
+}));
+
+export const gradingApplicationsRelations = relations(gradingApplications, ({ one }) => ({
+    profile: one(profiles, {
+        fields: [gradingApplications.profileId],
+        references: [profiles.id],
+    }),
+    gradingPeriod: one(gradingPeriods, {
+        fields: [gradingApplications.gradingPeriodId],
+        references: [gradingPeriods.id],
+    }),
+    currentRank: one(ranks, {
+        fields: [gradingApplications.currentRankId],
+        references: [ranks.id],
+        relationName: "currentRank"
+    }),
+    proposedRank: one(ranks, {
+        fields: [gradingApplications.proposedRankId],
+        references: [ranks.id],
+        relationName: "proposedRank"
+    }),
+}));
 
 export const gradingPeriods = pgTable("grading_periods", {
     id: uuid().defaultRandom().primaryKey().notNull(),
@@ -62,6 +166,11 @@ export const gradingPeriods = pgTable("grading_periods", {
 }, (_table) => [
     check("grading_periods_status_check", sql`status = ANY (ARRAY['Upcoming'::text, 'In Progress'::text, 'Completed'::text, 'Cancelled'::text])`),
 ]);
+
+export const gradingPeriodsRelations = relations(gradingPeriods, ({ many }) => ({
+    applications: many(gradingApplications),
+    allowedRanks: many(gradingPeriodRanks),
+}));
 
 export const gradingConfigurations = pgTable("grading_configurations", {
     id: uuid().defaultRandom().primaryKey().notNull(),
@@ -146,3 +255,33 @@ export const refereeRuleDocuments = pgTable("referee_rule_documents", {
 }, (_table) => [
     pgPolicy("Anyone can view rule documents", { as: "permissive", for: "select", to: ["public"], using: sql`true` }),
 ]);
+
+export const gradingPeriodRanks = pgTable("grading_period_ranks", {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    gradingPeriodId: uuid("grading_period_id").notNull(),
+    rankId: uuid("rank_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+    foreignKey({
+        columns: [table.gradingPeriodId],
+        foreignColumns: [gradingPeriods.id],
+        name: "grading_period_ranks_period_id_fkey"
+    }).onDelete("cascade"),
+    foreignKey({
+        columns: [table.rankId],
+        foreignColumns: [ranks.id],
+        name: "grading_period_ranks_rank_id_fkey"
+    }).onDelete("cascade"),
+    unique("grading_period_ranks_period_rank_key").on(table.gradingPeriodId, table.rankId),
+]);
+
+export const gradingPeriodRanksRelations = relations(gradingPeriodRanks, ({ one }) => ({
+    gradingPeriod: one(gradingPeriods, {
+        fields: [gradingPeriodRanks.gradingPeriodId],
+        references: [gradingPeriods.id],
+    }),
+    rank: one(ranks, {
+        fields: [gradingPeriodRanks.rankId],
+        references: [ranks.id],
+    }),
+}));

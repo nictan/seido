@@ -1,40 +1,55 @@
+export type KarateProfile = {
+  id: string;
+  profileId: string;
+  dojo: 'TP' | 'SIT' | 'HQ';
+  isStudent: boolean;
+  isInstructor: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RankHistory = {
+  id: string;
+  profileId: string;
+  rankId: string;
+  effectiveDate: string;
+  isCurrent: boolean;
+  createdAt: string;
+  rank?: Rank;
+};
+
 export type Profile = {
   id: string;
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  date_of_birth: string;
+  user_id: string; // userId from API
+  first_name: string; // firstName from API
+  last_name: string; // lastName from API
+  date_of_birth: string; // dateOfBirth from API
   gender: 'Male' | 'Female' | 'Other';
   email: string;
   mobile: string;
-  dojo: 'TP' | 'SIT' | 'HQ';
   remarks?: string;
   profile_picture_url?: string;
-  is_student: boolean;
-  is_instructor: boolean;
+  emergency_contact_name: string;
+  emergency_contact_relationship: string;
+  emergency_contact_phone: string;
+  emergency_contact_email?: string;
   is_admin: boolean;
-  current_grade?: {
-    kyu: number | null;
-    dan: number | null;
-    belt_color: string;
-    effective_date?: string;
-  };
-  current_rank_id?: string;
-  rank_effective_date?: string;
   created_at: string;
   updated_at: string;
+  karate_profile?: KarateProfile;
+  rank_histories?: RankHistory[];
 };
 
 export type Rank = {
   id: string;
-  rank_order: number;
+  rankOrder: number;
   kyu: number | null;
   dan: number | null;
-  belt_color: string;
+  beltColor: string;
   stripes: number;
-  display_name: string;
-  created_at: string;
-  updated_at: string;
+  displayName: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type GradingConfiguration = {
@@ -81,13 +96,33 @@ export type GradingPeriod = {
   id: string;
   title: string;
   description?: string;
-  grading_date: string;
+  gradingDate: string;
   location?: string;
   status: 'Upcoming' | 'In Progress' | 'Completed' | 'Cancelled';
-  max_applications?: number;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
+  maxApplications?: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  allowedRanks?: { rank: Rank }[];
+};
+
+export type GradingApplicationStatus = 'Submitted' | 'Approved' | 'Rejected' | 'Withdrawn' | 'Void';
+
+export type GradingApplication = {
+  id: string;
+  gradingPeriodId: string;
+  profileId: string;
+  currentRankId: string;
+  proposedRankId: string;
+  status: GradingApplicationStatus;
+  gradingStatus: 'Pending' | 'Pass' | 'Fail';
+  gradingNotes?: string;
+  instructorNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+  gradingPeriod?: GradingPeriod;
+  currentRank?: Rank;
+  proposedRank?: Rank;
 };
 
 export type GradingHistory = {
