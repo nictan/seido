@@ -3,9 +3,6 @@ import { profiles } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { verifyAuth } from './_auth.js';
 
-export const config = {
-    runtime: 'edge',
-};
 
 export default async function handler(request: Request) {
     if (request.method !== 'GET') {

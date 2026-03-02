@@ -3,9 +3,6 @@ import { gradingApplications, profiles, rankHistories } from '../../src/db/schem
 import { eq, desc, and } from 'drizzle-orm';
 import { verifyAuth } from '../_auth.js';
 
-export const config = {
-    runtime: 'edge',
-};
 
 export default async function handler(request: Request) {
     const payload = await verifyAuth(request);

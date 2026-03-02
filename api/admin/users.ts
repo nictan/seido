@@ -3,9 +3,6 @@ import { db } from '../_db.js';
 import { verifyAuth } from '../_auth.js';
 import { sql } from 'drizzle-orm';
 
-export const config = {
-    runtime: 'edge',
-};
 
 export default async function handler(request: Request) {
     if (request.method === 'GET') {

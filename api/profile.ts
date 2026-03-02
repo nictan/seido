@@ -3,9 +3,6 @@ import { profiles, karateProfiles, rankHistories, ranks } from '../src/db/schema
 import { eq, desc, and } from 'drizzle-orm';
 import { verifyAuth } from './_auth.js';
 
-export const config = {
-    runtime: 'edge',
-};
 
 export default async function handler(request: Request) {
     const url = new URL(request.url);
