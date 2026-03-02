@@ -39,16 +39,37 @@ export default function Auth() {
     const [isResetSent, setIsResetSent] = useState(false);
 
 
+    const getFriendlyErrorMessage = (error: any) => {
+        const msg = String(error?.message || error || "");
+
+        if (msg.includes("Too many requests") || msg.includes("429")) {
+            return "Too many attempts. Please wait 1 minute before trying again.";
+        }
+        if (msg.toLowerCase().includes("invalid") && (msg.toLowerCase().includes("login") || msg.toLowerCase().includes("credentials"))) {
+            return "Incorrect email or password. Please check your spelling.";
+        }
+        if (msg.toLowerCase().includes("network")) {
+            return "Network connection failed. Please check your internet.";
+        }
+        if (msg.toLowerCase().includes("user already exists")) {
+            return "An account with this email already exists.";
+        }
+
+        // Fallback for other errors
+        return msg.length > 100 ? "An unexpected error occurred. Please try again." : msg;
+    };
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         try {
             const { error } = await signIn(loginEmail, loginPassword);
             if (error) {
+                console.error("Login Error:", error);
                 toast({
                     variant: "destructive",
                     title: "Login Failed",
-                    description: error,
+                    description: getFriendlyErrorMessage(error),
                 });
             } else {
                 toast({
@@ -57,11 +78,12 @@ export default function Auth() {
                 });
                 navigate(from, { replace: true });
             }
-        } catch (err) {
+        } catch (err: any) {
+            console.error("Login Exception:", err);
             toast({
                 variant: "destructive",
-                title: "Error",
-                description: "An unexpected error occurred.",
+                title: "Login Error",
+                description: getFriendlyErrorMessage(err),
             });
         } finally {
             setIsLoading(false);
@@ -77,7 +99,7 @@ export default function Auth() {
                 toast({
                     variant: "destructive",
                     title: "Request Failed",
-                    description: error,
+                    description: getFriendlyErrorMessage(error),
                 });
             } else {
                 setIsResetSent(true);
@@ -90,7 +112,7 @@ export default function Auth() {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "An unexpected error occurred.",
+                description: getFriendlyErrorMessage(err),
             });
         } finally {
             setIsLoading(false);
@@ -115,7 +137,7 @@ export default function Auth() {
                 toast({
                     variant: "destructive",
                     title: "Signup Failed",
-                    description: error,
+                    description: getFriendlyErrorMessage(error),
                 });
             } else {
                 toast({
@@ -128,7 +150,7 @@ export default function Auth() {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "An unexpected error occurred.",
+                description: getFriendlyErrorMessage(err),
             });
         } finally {
             setIsLoading(false);
@@ -171,9 +193,9 @@ export default function Auth() {
                                                     <Input
                                                         id="forgot-email"
                                                         type="email"
-                                                        placeholder="student@seido.sg"
+                                                        placeholder="user@email.com"
                                                         value={forgotEmail}
-                                                        onChange={(e) => setForgotEmail(e.target.value)}
+                                                        onChange={(e) => setForgotEmail(e.target.value.trim().toLowerCase())}
                                                         required
                                                     />
                                                 </div>
@@ -205,7 +227,7 @@ export default function Auth() {
                                                     type="email"
                                                     placeholder="user@email.com"
                                                     value={loginEmail}
-                                                    onChange={(e) => setLoginEmail(e.target.value)}
+                                                    onChange={(e) => setLoginEmail(e.target.value.trim().toLowerCase())}
                                                     required
                                                 />
                                             </div>
@@ -308,6 +330,29 @@ export default function Auth() {
                                             />
                                         </div>
 
+                                        <div className="space-y-2">
+                                            <Label htmlFor="signup-email">Email</Label>
+                                            <Input
+                                                id="signup-email"
+                                                type="email"
+                                                placeholder="student@seido.sg"
+                                                value={signupEmail}
+                                                onChange={(e) => setSignupEmail(e.target.value.trim().toLowerCase())}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="signup-password">Password</Label>
+                                            <Input
+                                                id="signup-password"
+                                                type="password"
+                                                value={signupPassword}
+                                                onChange={(e) => setSignupPassword(e.target.value)}
+                                                required
+                                                minLength={6}
+                                            />
+                                        </div>
+
                                         <div className="border-t pt-2 mt-2">
                                             <p className="text-sm font-medium mb-2">Emergency Contact</p>
                                             <div className="space-y-2 mb-2">
@@ -340,29 +385,6 @@ export default function Auth() {
                                                     />
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="signup-email">Email</Label>
-                                            <Input
-                                                id="signup-email"
-                                                type="email"
-                                                placeholder="student@seido.sg"
-                                                value={signupEmail}
-                                                onChange={(e) => setSignupEmail(e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="signup-password">Password</Label>
-                                            <Input
-                                                id="signup-password"
-                                                type="password"
-                                                value={signupPassword}
-                                                onChange={(e) => setSignupPassword(e.target.value)}
-                                                required
-                                                minLength={6}
-                                            />
                                         </div>
                                     </CardContent>
                                     <CardFooter>

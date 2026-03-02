@@ -29,8 +29,8 @@ describe('Admin API', () => {
 
         // 3. Mock Fetch Query
         const mockUsers = [
-            { userId: 'u1', firstName: 'John', isAdmin: false, isInstructor: false },
-            { userId: 'u2', firstName: 'Sensei', isAdmin: false, isInstructor: true }
+            { userId: 'u1', firstName: 'John', isAdmin: false, isInstructor: false, isStudent: true },
+            { userId: 'u2', firstName: 'Sensei', isAdmin: false, isInstructor: true, isStudent: false }
         ];
         (db.execute as any).mockResolvedValueOnce({ rows: mockUsers }); // fetch
 
@@ -40,8 +40,8 @@ describe('Admin API', () => {
         expect(res.status).toBe(200);
         const data = await res.json();
         expect(data).toHaveLength(2);
-        expect(data[0].isStudent).toBe(true); // Derived
-        expect(data[1].isStudent).toBe(false); // Derived
+        expect(data[0].isStudent).toBe(true);
+        expect(data[1].isStudent).toBe(false);
     });
 
     it('should delete user', async () => {

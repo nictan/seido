@@ -15,8 +15,8 @@ export default function Index() {
             <main className="container mx-auto px-4 py-8">
                 <div className="max-w-4xl mx-auto space-y-8">
                     <div className="text-center space-y-4">
-                        <h1 className="text-4xl font-bold tracking-tight">Welcome to Seido Karate</h1>
-                        <p className="text-xl text-muted-foreground">My Seido - Student Portal</p>
+                        <h1 className="text-4xl font-bold tracking-tight">Hayashi-Ha Shitoryu Karate-do Singapore</h1>
+                        <p className="text-xl text-muted-foreground">Student Portal</p>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-6">

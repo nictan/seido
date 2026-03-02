@@ -1,73 +1,51 @@
-# React + TypeScript + Vite
+# Seido Student Portal
+**Hayashi-Ha Shitoryu Karate-do Singapore**
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Seido is a comprehensive student portal designed to manage karate practitioners' journeys, track grading progressions, and facilitate instructor/admin operations.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+* **Karate Profile Management**: Students can view and manage their personal details, training history, and instructor status.
+* **Grading Card & Progression**: Track current ranks, view upcoming grading requirements, and maintain a complete history of belt promotions.
+* **Role-Based Access**:
+  * **Students**: Access personal profiles and grading history.
+  * **Instructors**: Dedicated dashboard to manage their students, evaluate gradings, and track class progress.
+  * **Administrators**: Full administrative control over users, rank systems, and system settings.
+* **Interactive Training Tools**: Dedicated practice tools for scoring and learning competition rules.
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+This project is built with modern web technologies:
+* **Frontend Framework**: React 19 + TypeScript + Vite
+* **Styling**: Tailwind CSS, Shadcn UI (Radix UI)
+* **Routing**: React Router
+* **State Management**: TanStack React Query
+* **Authentication**: Better Auth
+* **Database & ORM**: Neon Database (Serverless Postgres) + Drizzle ORM
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Ensure you have Node.js and `npm` installed.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Set up environment variables:
+   Create a `.env.local` file with the necessary database and authentication keys (refer to your infrastructure details).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Scripts
+- `npm run dev`: Starts the local Vite development server.
+- `npm run build`: Compiles TypeScript and builds the app for production.
+- `npm run lint`: Runs ESLint for code formatting and standardizing.
+- `npm run test`: Runs the test suite via Vitest.
