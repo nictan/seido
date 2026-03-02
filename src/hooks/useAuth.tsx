@@ -214,9 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const forgetPassword = async (email: string) => {
     try {
-      // The endpoint /request-password-reset returned 200 in discovery.
-      // Trying the requestPasswordReset method directly.
-      const { error } = await (authClient as any).requestPasswordReset({
+      const { error } = await (authClient as any).forgetPassword({
         email,
         redirectTo: `${window.location.origin}/reset-password`
       });
