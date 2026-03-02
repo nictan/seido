@@ -214,7 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const forgetPassword = async (email: string) => {
     try {
-      const { error } = await (authClient as any).forgetPassword({
+      const { error } = await (authClient as any).requestPasswordReset({
         email,
         redirectTo: `${window.location.origin}/reset-password`
       });
