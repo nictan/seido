@@ -266,6 +266,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return mapped;
   };
 
+  const mapCamelToSnake = (obj: any): any => {
+    if (Array.isArray(obj)) return obj.map(mapCamelToSnake);
+    if (obj !== null && typeof obj === 'object') {
+      return Object.keys(obj).reduce((acc, key) => {
+        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        acc[snakeKey] = mapCamelToSnake(obj[key]);
+        return acc;
+      }, {} as any);
+    }
+    return obj;
+  };
+
   const createProfile = async (profileData: any) => {
     if (!user || !session?.access_token) {
       console.warn("createProfile: Missing user or access token", { hasUser: !!user, hasToken: !!session?.access_token });

@@ -281,6 +281,10 @@ const Profile = () => {
                                         <Label htmlFor="create-mobile">Mobile *</Label>
                                         <Input id="create-mobile" type="tel" value={formData.mobile} onChange={e => handleInputChange("mobile", e.target.value)} required />
                                     </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="create-remarks">Remarks</Label>
+                                        <Textarea id="create-remarks" value={formData.remarks} onChange={e => handleInputChange("remarks", e.target.value)} placeholder="Any additional notes or previous martial arts experience" rows={2} />
+                                    </div>
 
                                     <div className="pt-4 border-t">
                                         <h4 className="font-semibold mb-3">Emergency Contact</h4>
@@ -298,6 +302,10 @@ const Profile = () => {
                                                     <Label htmlFor="create-ec-phone">Contact Phone *</Label>
                                                     <Input id="create-ec-phone" type="tel" value={formData.emergency_contact_phone} onChange={e => handleInputChange("emergency_contact_phone", e.target.value)} required />
                                                 </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="create-ec-email">Contact Email</Label>
+                                                <Input id="create-ec-email" type="email" value={formData.emergency_contact_email} onChange={e => handleInputChange("emergency_contact_email", e.target.value)} placeholder="Optional" />
                                             </div>
                                         </div>
                                     </div>
@@ -352,8 +360,32 @@ const Profile = () => {
                         </CardHeader>
                         <CardContent className="space-y-6">
                             {!isEditing ? (
-                                <div className="py-2">
+                                <div className="py-2 space-y-6">
                                     <MembershipCard profile={profile} />
+                                    <div className="grid gap-4 md:grid-cols-2 text-sm border-t pt-4">
+                                        <div>
+                                            <span className="text-muted-foreground mr-2 font-medium">Email:</span>
+                                            {profile.email}
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground mr-2 font-medium">Mobile:</span>
+                                            {profile.mobile || "Not provided"}
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground mr-2 font-medium">Date of Birth:</span>
+                                            {profile.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : "Not provided"}
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground mr-2 font-medium">Gender:</span>
+                                            {profile.gender || "Other"}
+                                        </div>
+                                    </div>
+                                    {profile.remarks && (
+                                        <div className="text-sm pt-2">
+                                            <span className="text-muted-foreground font-medium block mb-1">Remarks:</span>
+                                            <p className="p-3 bg-muted/50 rounded-md border text-muted-foreground">{profile.remarks}</p>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <>
@@ -548,6 +580,23 @@ const Profile = () => {
                                 ) : (
                                     <p className="text-sm p-2 bg-muted rounded">
                                         {formData.emergency_contact_phone || "Not provided"}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="emergency_contact_email">Contact Email</Label>
+                                {isEditingEmergencyContact ? (
+                                    <Input
+                                        id="emergency_contact_email"
+                                        type="email"
+                                        value={formData.emergency_contact_email}
+                                        onChange={(e) => handleInputChange("emergency_contact_email", e.target.value)}
+                                        placeholder="Optional email"
+                                    />
+                                ) : (
+                                    <p className="text-sm p-2 bg-muted rounded">
+                                        {formData.emergency_contact_email || "Not provided"}
                                     </p>
                                 )}
                             </div>

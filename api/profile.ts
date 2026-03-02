@@ -90,8 +90,8 @@ export default async function handler(request: Request) {
             const {
                 firstName, lastName, email,
                 dateOfBirth, mobile, gender,
-                emergencyContactName, emergencyContactRelationship, emergencyContactPhone,
-                dojo, rankId
+                emergencyContactName, emergencyContactRelationship, emergencyContactPhone, emergencyContactEmail,
+                remarks, dojo, rankId
             } = body;
 
             const userId = payload.sub as string;
@@ -137,6 +137,8 @@ export default async function handler(request: Request) {
                     emergencyContactName,
                     emergencyContactRelationship,
                     emergencyContactPhone,
+                    emergencyContactEmail,
+                    remarks,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                 }).returning();
