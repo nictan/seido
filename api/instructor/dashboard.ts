@@ -25,7 +25,7 @@ export default async function handler(request: Request) {
             with: { karateProfile: true }
         });
 
-        if (!requesterProfile?.karateProfile?.isInstructor && !requesterProfile?.karateProfile?.isStudent === false) {
+        if (!requesterProfile?.isInstructor && !requesterProfile?.isStudent === false) {
             // Logic check: if not instructor. Using isStudent=false as proxy for potential instructor if field missing, 
             // but schema says isInstructor available? Let's check schema.
             // Actually, plan says "Assuming 'Instructor' privileges are determined by profile.karate_profile.is_instructor"
@@ -43,7 +43,7 @@ export default async function handler(request: Request) {
         }
 
         // Re-using logic from profile.ts
-        const isInstructor = requesterProfile?.karateProfile?.isInstructor || false;
+        const isInstructor = requesterProfile?.isInstructor || false;
 
         if (!isInstructor) {
             return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
@@ -51,8 +51,8 @@ export default async function handler(request: Request) {
 
         // 1. Total Students
         const studentsCount = await db.select({ count: sql<number>`count(*)` })
-            .from(karateProfiles)
-            .where(eq(karateProfiles.isStudent, true));
+            .from(profiles)
+            .where(eq(profiles.isStudent, true));
 
         // 2. Pending Applications
         const pendingAppsCount = await db.select({ count: sql<number>`count(*)` })

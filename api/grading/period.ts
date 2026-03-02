@@ -53,7 +53,7 @@ export default async function handler(request: Request) {
                 with: { karateProfile: true }
             });
 
-            if (!requesterProfile?.karateProfile?.isInstructor) {
+            if (!requesterProfile?.isInstructor) {
                 return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
             }
 
@@ -109,7 +109,7 @@ export default async function handler(request: Request) {
                 with: { karateProfile: true }
             });
 
-            if (!requesterProfile?.karateProfile?.isInstructor) {
+            if (!requesterProfile?.isInstructor) {
                 return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
             }
 
