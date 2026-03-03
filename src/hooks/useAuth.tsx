@@ -265,7 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         let errorMessage = "Failed to create profile";
         try {
           const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
+          errorMessage = errorData.message || errorData.detail || errorData.error || errorMessage;
         } catch {
           // If server returns HTML or plain text (e.g. 500 Edge error)
           errorMessage = `Server Error: ${response.status} ${response.statusText}`;
