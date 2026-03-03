@@ -27,12 +27,6 @@ export default function Auth() {
     const [signupPassword, setSignupPassword] = useState("");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
-    const [dateOfBirth, setDateOfBirth] = useState("");
-    const [gender, setGender] = useState("");
-    const [mobile, setMobile] = useState("");
-    const [emergencyName, setEmergencyName] = useState("");
-    const [emergencyRel, setEmergencyRel] = useState("");
-    const [emergencyPhone, setEmergencyPhone] = useState("");
 
     const [isForgotPassword, setIsForgotPassword] = useState(false);
     const [forgotEmail, setForgotEmail] = useState("");
@@ -126,12 +120,6 @@ export default function Auth() {
             const { error } = await signUp(signupEmail, signupPassword, {
                 firstName,
                 lastName,
-                dateOfBirth,
-                gender,
-                mobile,
-                emergencyContactName: emergencyName,
-                emergencyContactRelationship: emergencyRel,
-                emergencyContactPhone: emergencyPhone,
             });
             if (error) {
                 toast({
@@ -294,43 +282,6 @@ export default function Auth() {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="signup-dob">Date of Birth</Label>
-                                            <Input
-                                                id="signup-dob"
-                                                type="date"
-                                                value={dateOfBirth}
-                                                onChange={(e) => setDateOfBirth(e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="signup-gender">Gender</Label>
-                                            <select
-                                                id="signup-gender"
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                value={gender}
-                                                onChange={(e) => setGender(e.target.value)}
-                                                required
-                                            >
-                                                <option value="" disabled>Select Gender</option>
-                                                <option value="Male">Male</option>
-                                                <option value="Female">Female</option>
-                                                <option value="Other">Other</option>
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="signup-mobile">Mobile Number</Label>
-                                            <Input
-                                                id="signup-mobile"
-                                                type="tel"
-                                                placeholder="+65 9123 4567"
-                                                value={mobile}
-                                                onChange={(e) => setMobile(e.target.value)}
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
                                             <Label htmlFor="signup-email">Email</Label>
                                             <Input
                                                 id="signup-email"
@@ -351,40 +302,6 @@ export default function Auth() {
                                                 required
                                                 minLength={6}
                                             />
-                                        </div>
-
-                                        <div className="border-t pt-2 mt-2">
-                                            <p className="text-sm font-medium mb-2">Emergency Contact</p>
-                                            <div className="space-y-2 mb-2">
-                                                <Label htmlFor="signup-ec-name" className="text-xs">Name</Label>
-                                                <Input
-                                                    id="signup-ec-name"
-                                                    value={emergencyName}
-                                                    onChange={(e) => setEmergencyName(e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="signup-ec-rel" className="text-xs">Relationship</Label>
-                                                    <Input
-                                                        id="signup-ec-rel"
-                                                        value={emergencyRel}
-                                                        onChange={(e) => setEmergencyRel(e.target.value)}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="signup-ec-phone" className="text-xs">Phone</Label>
-                                                    <Input
-                                                        id="signup-ec-phone"
-                                                        type="tel"
-                                                        value={emergencyPhone}
-                                                        onChange={(e) => setEmergencyPhone(e.target.value)}
-                                                        required
-                                                    />
-                                                </div>
-                                            </div>
                                         </div>
                                     </CardContent>
                                     <CardFooter>

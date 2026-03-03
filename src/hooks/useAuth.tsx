@@ -151,44 +151,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) return { error: error.message || "Signup failed" };
 
       if (data && data.user) {
-
-
         const smartToken = getSmartToken((data as any).session || { token: data.token });
-
         const token = smartToken || "";
-
-        try {
-          const profileRes = await fetch('/api/profile', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              userId: data.user.id,
-              firstName: userData.firstName,
-              lastName: userData.lastName,
-              email: data.user.email,
-              dateOfBirth: userData.dateOfBirth,
-              gender: userData.gender,
-              mobile: userData.mobile,
-              emergencyContactName: userData.emergencyContactName,
-              emergencyContactRelationship: userData.emergencyContactRelationship,
-              emergencyContactPhone: userData.emergencyContactPhone,
-            })
-          });
-
-          if (!profileRes.ok) {
-            const errText = await profileRes.text();
-            console.error(`Failed to create profile record: ${profileRes.status} ${errText}`);
-            throw new Error(`Profile creation failed: ${errText}`);
-          }
-
-        } catch (profileError: any) {
-          console.error("Failed to create profile record", profileError);
-          // Return error so UI knows signup wasn't fully successful
-          return { error: `Account created but profile failed: ${profileError.message}` };
-        }
 
         const mappedUser: User = { id: data.user.id, email: data.user.email, name: data.user.name };
         setUser(mappedUser);

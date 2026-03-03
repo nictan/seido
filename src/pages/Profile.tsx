@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { MembershipCard } from "@/components/profile/MembershipCard";
 const Profile = () => {
     const { profile, loading, createProfile, updateProfile, user, refreshProfile } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const { toast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -186,6 +187,12 @@ const Profile = () => {
                     title: "Profile Created",
                     description: "Welcome to Seido! Your profile has been set up.",
                 });
+
+                // Force onboarding flow completed, navigate to dashboard
+                // If they just created their profile (forced onboarding flow), navigate them to dashboard
+                const state = location.state as any;
+                const from = state?.from?.pathname || "/";
+                navigate(from, { replace: true });
             }
         } catch (error) {
             toast({

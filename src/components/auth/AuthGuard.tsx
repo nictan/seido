@@ -19,5 +19,12 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
         return <Navigate to="/auth" state={{ from: location }} replace />;
     }
 
+    // Force profile completion if the user does not have an active profile
+    // Allow access to /profile to actually complete it
+    const { profile } = useAuth();
+    if (user && !profile && location.pathname !== '/profile') {
+        return <Navigate to="/profile" state={{ from: location }} replace />;
+    }
+
     return <>{children}</>;
 };
