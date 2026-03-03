@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { Loader2, RefreshCw, Shield, GraduationCap, Building2, Trash2, Search, Filter } from "lucide-react";
+import { Loader2, RefreshCw, Shield, GraduationCap, Building2, Trash2, Search, Filter, BookOpen, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AdminResetPasswordDialog } from "@/components/admin/AdminResetPasswordDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -273,6 +273,39 @@ export default function AdminDashboard() {
                             <p className="text-xs text-muted-foreground">Across {activeDojos} locations</p>
                         </CardContent>
                     </Card>
+                </div>
+
+                {/* Quick Links */}
+                <div>
+                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Quick Links</h2>
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                        <a
+                            href="/admin/referee-questions"
+                            className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-muted/50 hover:shadow-sm transition-all group"
+                        >
+                            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                <BookOpen className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm">Referee Question Banks</p>
+                                <p className="text-xs text-muted-foreground">Manage questions &amp; quiz settings</p>
+                            </div>
+                            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                        </a>
+                        <a
+                            href="/admin/ranks"
+                            className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-muted/50 hover:shadow-sm transition-all group"
+                        >
+                            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                <GraduationCap className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm">Rank Management</p>
+                                <p className="text-xs text-muted-foreground">Configure belts and grading ranks</p>
+                            </div>
+                            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                        </a>
+                    </div>
                 </div>
 
                 <Card>
@@ -548,6 +581,6 @@ export default function AdminDashboard() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        </div >
     );
 }
