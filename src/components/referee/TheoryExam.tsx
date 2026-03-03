@@ -23,9 +23,15 @@ type ExamPhase = 'select' | 'exam' | 'results';
 
 type ExamConfig = {
     exam_pass_threshold: number;
-    exam_time_limit_enabled: boolean;
+    exam_question_count: number;
+    exam_time_mode: string;
+    exam_total_time_seconds: number;
     exam_time_per_question_seconds: number;
 };
+
+function shuffle<T>(arr: T[]): T[] {
+    return [...arr].sort(() => Math.random() - 0.5);
+}
 
 function formatTime(seconds: number): string {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -39,13 +45,14 @@ export function TheoryExam() {
     const [category, setCategory] = useState<ExamCategory>('kata');
     const [questions, setQuestions] = useState<DBQuestion[]>([]);
     const [bankCounts, setBankCounts] = useState<Record<string, number>>({});
-    const [examConfig, setExamConfig] = useState<ExamConfig>({ exam_pass_threshold: 0.7, exam_time_limit_enabled: false, exam_time_per_question_seconds: 60 });
+    const [examConfig, setExamConfig] = useState<ExamConfig>({ exam_pass_threshold: 0.7, exam_question_count: 50, exam_time_mode: 'none', exam_total_time_seconds: 3600, exam_time_per_question_seconds: 60 });
     const [loading, setLoading] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState<(boolean | null)[]>([]);
     const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
     const [showReview, setShowReview] = useState<Record<number, boolean>>({});
     const [elapsed, setElapsed] = useState(0);
+    const [elapsedAtQStart, setElapsedAtQStart] = useState(0);
     const [timerRef, setTimerRef] = useState<ReturnType<typeof setInterval> | null>(null);
 
     const results: QuizResult[] = questions.map((q, i) => ({
@@ -67,7 +74,9 @@ export function TheoryExam() {
             .then(cfg => {
                 if (cfg) setExamConfig({
                     exam_pass_threshold: Number(cfg.exam_pass_threshold),
-                    exam_time_limit_enabled: cfg.exam_time_limit_enabled,
+                    exam_question_count: Number(cfg.exam_question_count),
+                    exam_time_mode: cfg.exam_time_mode || 'none',
+                    exam_total_time_seconds: Number(cfg.exam_total_time_seconds),
                     exam_time_per_question_seconds: Number(cfg.exam_time_per_question_seconds),
                 });
             });
@@ -87,46 +96,62 @@ export function TheoryExam() {
         const res = await fetch(`/api/referee/questions?discipline=${category}`, {
             headers: { Authorization: `Bearer ${session.access_token}` },
         });
-        const bank: DBQuestion[] = res.ok ? await res.json() : [];
+        let bank: DBQuestion[] = res.ok ? await res.json() : [];
+        bank = shuffle(bank).slice(0, examConfig.exam_question_count);
+
         setQuestions(bank);
         setAnswers(new Array(bank.length).fill(null));
         setCurrentIndex(0);
         setSelectedAnswer(null);
         setElapsed(0);
+        setElapsedAtQStart(0);
+
         const start = Date.now();
-        const totalLimit = examConfig.exam_time_limit_enabled
-            ? bank.length * examConfig.exam_time_per_question_seconds
-            : null;
         const ref = setInterval(() => {
-            const newElapsed = Math.floor((Date.now() - start) / 1000);
-            setElapsed(newElapsed);
-            // Auto-submit when time limit reached
-            if (totalLimit && newElapsed >= totalLimit) {
-                clearInterval(ref);
-                setPhase('results');
-            }
+            setElapsed(Math.floor((Date.now() - start) / 1000));
         }, 1000);
         setTimerRef(ref);
         setLoading(false);
         setPhase('exam');
     }
 
-    function handleAnswer(answer: boolean) {
-        if (selectedAnswer !== null) return;
-        setSelectedAnswer(answer);
-    }
-
     function handleNext() {
-        const newAnswers = [...answers];
-        newAnswers[currentIndex] = selectedAnswer;
-        setAnswers(newAnswers);
+        setAnswers(prev => {
+            const next = [...prev];
+            next[currentIndex] = selectedAnswer;
+            return next;
+        });
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(prev => prev + 1);
             setSelectedAnswer(null);
+            setElapsedAtQStart(elapsed);
         } else {
             if (timerRef) clearInterval(timerRef);
             setPhase('results');
         }
+    }
+
+    useEffect(() => {
+        if (phase !== 'exam') return;
+
+        const { exam_time_mode, exam_total_time_seconds, exam_time_per_question_seconds } = examConfig;
+
+        // Check overall total limit
+        if (['total', 'both'].includes(exam_time_mode) && elapsed >= exam_total_time_seconds) {
+            if (timerRef) clearInterval(timerRef);
+            setPhase('results');
+            return;
+        }
+
+        // Check per-question limit
+        if (['per_question', 'both'].includes(exam_time_mode) && (elapsed - elapsedAtQStart) >= exam_time_per_question_seconds) {
+            handleNext();
+        }
+    }, [elapsed, phase, examConfig, elapsedAtQStart]);
+
+    function handleAnswer(answer: boolean) {
+        if (selectedAnswer !== null) return;
+        setSelectedAnswer(answer);
     }
 
     function restart() {
@@ -135,10 +160,16 @@ export function TheoryExam() {
         setSelectedAnswer(null);
         setShowReview({});
         setElapsed(0);
+        setElapsedAtQStart(0);
     }
 
     const progress = questions.length > 0 ? (currentIndex / questions.length) * 100 : 0;
     const banksLoaded = Object.keys(bankCounts).length > 0;
+
+    // Time Mode render helpers
+    const showTotalTime = ['total', 'both'].includes(examConfig.exam_time_mode);
+    const showPerQuestionTime = ['per_question', 'both'].includes(examConfig.exam_time_mode);
+    const qTimeElapsed = elapsed - elapsedAtQStart;
 
     // ── Select Phase ──────────────────────────────────────────────────────────
     if (phase === 'select') {
@@ -146,7 +177,7 @@ export function TheoryExam() {
             <div className="max-w-md mx-auto space-y-6 py-4">
                 <div className="text-center space-y-2">
                     <h2 className="text-xl font-bold">Simulated Theory Exam</h2>
-                    <p className="text-sm text-muted-foreground">Full question bank · Pass mark {Math.round(examConfig.exam_pass_threshold * 100)}%{examConfig.exam_time_limit_enabled ? ` · ${examConfig.exam_time_per_question_seconds}s per question` : ' · Untimed'}</p>
+                    <p className="text-sm text-muted-foreground">{examConfig.exam_question_count} questions · Pass mark {Math.round(examConfig.exam_pass_threshold * 100)}%</p>
                 </div>
 
                 {!banksLoaded ? (
@@ -171,9 +202,12 @@ export function TheoryExam() {
                         </div>
                         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
                             <p className="font-semibold mb-1">⏱ Exam Conditions</p>
-                            <p>All questions must be answered. You need <strong>{Math.round(examConfig.exam_pass_threshold * 100)}%</strong> or above to pass.
-                                {examConfig.exam_time_limit_enabled && ` Time limit: ${examConfig.exam_time_per_question_seconds}s per question.`}
-                            </p>
+                            <p>You need <strong>{Math.round(examConfig.exam_pass_threshold * 100)}%</strong> or above to pass.</p>
+                            <ul className="list-disc ml-5 mt-1 space-y-0.5">
+                                {showTotalTime && <li>Global time limit: {Math.round(examConfig.exam_total_time_seconds / 60)} minutes. The exam will auto-submit when time expires.</li>}
+                                {showPerQuestionTime && <li>Per-question limit: {examConfig.exam_time_per_question_seconds} seconds. Unanswered questions will auto-advance as incorrect.</li>}
+                                {!showTotalTime && !showPerQuestionTime && <li>Untimed exam.</li>}
+                            </ul>
                         </div>
                         <button
                             onClick={startExam}
@@ -203,12 +237,21 @@ export function TheoryExam() {
                             <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                         </div>
                     </div>
-                    <div className="text-sm font-mono font-bold shrink-0">
-                        <span className={examConfig.exam_time_limit_enabled && questions.length > 0 && elapsed >= questions.length * examConfig.exam_time_per_question_seconds * 0.9 ? 'text-red-500' : 'text-muted-foreground'}>
-                            {formatTime(elapsed)}
-                        </span>
-                        {examConfig.exam_time_limit_enabled && questions.length > 0 && (
-                            <span className="text-xs text-muted-foreground ml-1">/ {formatTime(questions.length * examConfig.exam_time_per_question_seconds)}</span>
+                    <div className="text-sm font-mono font-bold shrink-0 flex flex-col items-end gap-1">
+                        {showTotalTime && (
+                            <div className="flex items-center gap-1">
+                                <span className={examConfig.exam_total_time_seconds - elapsed <= 60 ? 'text-red-500' : 'text-muted-foreground'}>Total: {formatTime(examConfig.exam_total_time_seconds - elapsed)}</span>
+                            </div>
+                        )}
+                        {showPerQuestionTime && (
+                            <div className="flex items-center gap-1 text-xs">
+                                <span className={examConfig.exam_time_per_question_seconds - qTimeElapsed <= 10 ? 'text-red-500' : 'text-muted-foreground'}>
+                                    Q: {formatTime(examConfig.exam_time_per_question_seconds - qTimeElapsed)}
+                                </span>
+                            </div>
+                        )}
+                        {!showTotalTime && !showPerQuestionTime && (
+                            <span className="text-muted-foreground">{formatTime(elapsed)}</span>
                         )}
                     </div>
                 </div>

@@ -5,7 +5,7 @@ import { useToast } from '../hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Loader2, CheckCircle, XCircle, ChevronDown, ChevronUp, BookOpen, Settings2, Save } from 'lucide-react';
 import { Switch } from '../components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
@@ -40,6 +40,11 @@ type QuizConfig = {
     exam_time_limit_enabled: boolean;
     exam_time_per_question_seconds: number;
     exam_pass_threshold: number;
+    exam_question_count: number;
+    exam_time_mode: string;
+    exam_total_time_seconds: number;
+    active_kata_bank_id: string | null;
+    active_kumite_bank_id: string | null;
 };
 
 export default function RefereeQuestionsAdmin() {
@@ -58,7 +63,21 @@ export default function RefereeQuestionsAdmin() {
         exam_time_limit_enabled: false,
         exam_time_per_question_seconds: 60,
         exam_pass_threshold: 0.70,
+        exam_question_count: 50,
+        exam_time_mode: 'none',
+        exam_total_time_seconds: 3600,
+        active_kata_bank_id: null,
+        active_kumite_bank_id: null,
     });
+
+    // Import state
+    const [importBankMode, setImportBankMode] = useState<'existing' | 'new'>('existing');
+    const [importTargetBankId, setImportTargetBankId] = useState('');
+    const [importDiscipline, setImportDiscipline] = useState('');
+    const [importNewBankName, setImportNewBankName] = useState('');
+    const [importJson, setImportJson] = useState('');
+    const [isImporting, setIsImporting] = useState(false);
+
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -93,7 +112,58 @@ export default function RefereeQuestionsAdmin() {
                 exam_time_limit_enabled: cfg.exam_time_limit_enabled,
                 exam_time_per_question_seconds: Number(cfg.exam_time_per_question_seconds),
                 exam_pass_threshold: Number(cfg.exam_pass_threshold),
+                exam_question_count: Number(cfg.exam_question_count),
+                exam_time_mode: cfg.exam_time_mode || 'none',
+                exam_total_time_seconds: Number(cfg.exam_total_time_seconds),
+                active_kata_bank_id: cfg.active_kata_bank_id || null,
+                active_kumite_bank_id: cfg.active_kumite_bank_id || null,
             });
+        }
+    }
+
+    async function handleImportSelection() {
+        if (!importJson.trim()) {
+            toast({ title: 'Validation', description: 'Please paste JSON payload.', variant: 'destructive' });
+            return;
+        }
+
+        let parsed;
+        try {
+            parsed = JSON.parse(importJson);
+        } catch (e) {
+            toast({ title: 'Format Error', description: 'Invalid JSON.', variant: 'destructive' });
+            return;
+        }
+
+        if (!Array.isArray(parsed)) {
+            toast({ title: 'Format Error', description: 'JSON must be an array of questions.', variant: 'destructive' });
+            return;
+        }
+
+        setIsImporting(true);
+        const res = await fetch('/api/referee/questions?action=import', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${session?.access_token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                bank_id: importBankMode === 'existing' ? importTargetBankId : undefined,
+                new_bank_name: importBankMode === 'new' ? importNewBankName : undefined,
+                discipline: importBankMode === 'new' ? importDiscipline : undefined,
+                questions: parsed
+            }),
+        });
+        setIsImporting(false);
+
+        if (res.ok) {
+            const result = await res.json();
+            toast({ title: 'Success', description: `Imported ${result.count} questions.` });
+            setImportJson('');
+            fetchBanks(); // refresh counts
+        } else {
+            const err = await res.json();
+            toast({ title: 'Import Failed', description: err.error || 'Unknown error occurred.', variant: 'destructive' });
         }
     }
 
@@ -266,42 +336,71 @@ export default function RefereeQuestionsAdmin() {
                             <CardTitle className="text-base">Quiz &amp; Exam Configuration</CardTitle>
                         </div>
                     </CardHeader>
-                    <CardContent className="space-y-5">
-                        {/* Quiz settings */}
-                        <div>
-                            <p className="text-sm font-semibold mb-3">Quick Quiz</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="quiz_question_count">Questions per Quiz</Label>
-                                    <Input
-                                        id="quiz_question_count"
-                                        type="number"
-                                        min={1}
-                                        max={50}
-                                        value={quizConfig.quiz_question_count}
-                                        onChange={e => setQuizConfig(c => ({ ...c, quiz_question_count: Math.max(1, Number(e.target.value)) }))}
-                                    />
-                                    <p className="text-xs text-muted-foreground">How many questions are drawn per quiz session</p>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label>Randomise Question Order</Label>
-                                    <div className="flex items-center gap-3 pt-1.5">
-                                        <Switch
-                                            checked={quizConfig.quiz_shuffle}
-                                            onCheckedChange={v => setQuizConfig(c => ({ ...c, quiz_shuffle: v }))}
-                                        />
-                                        <span className="text-sm text-muted-foreground">{quizConfig.quiz_shuffle ? 'Enabled' : 'Disabled'}</span>
-                                    </div>
-                                </div>
+                    <CardContent className="space-y-6">
+                        {/* Active Banks Row */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border border-border/50">
+                            <div className="space-y-1.5">
+                                <Label className="text-primary font-semibold">Active Kata Bank Version</Label>
+                                <Select value={quizConfig.active_kata_bank_id || ''} onValueChange={v => setQuizConfig({ ...quizConfig, active_kata_bank_id: v })}>
+                                    <SelectTrigger className="bg-background"><SelectValue placeholder="Select Bank" /></SelectTrigger>
+                                    <SelectContent>
+                                        {banks.filter(b => b.discipline === 'kata').map(b => (
+                                            <SelectItem key={b.id} value={b.id}>{b.name} (v{b.version})</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-muted-foreground">Used for all Kata quizzes and exams.</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-primary font-semibold">Active Kumite Bank Version</Label>
+                                <Select value={quizConfig.active_kumite_bank_id || ''} onValueChange={v => setQuizConfig({ ...quizConfig, active_kumite_bank_id: v })}>
+                                    <SelectTrigger className="bg-background"><SelectValue placeholder="Select Bank" /></SelectTrigger>
+                                    <SelectContent>
+                                        {banks.filter(b => b.discipline === 'kumite').map(b => (
+                                            <SelectItem key={b.id} value={b.id}>{b.name} (v{b.version})</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-muted-foreground">Used for all Kumite quizzes and exams.</p>
                             </div>
                         </div>
 
-                        <div className="border-t" />
+                        {/* Config Sections */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-2">
+                            {/* Quiz settings */}
+                            <div>
+                                <p className="text-sm font-semibold mb-3 flex items-center gap-2"><BookOpen className="h-4 w-4 text-muted-foreground" /> Quick Quiz</p>
+                                <div className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="quiz_question_count">Questions per Quiz</Label>
+                                        <Input
+                                            id="quiz_question_count"
+                                            type="number"
+                                            min={1}
+                                            max={100}
+                                            value={quizConfig.quiz_question_count}
+                                            onChange={e => setQuizConfig(c => ({ ...c, quiz_question_count: Math.max(1, Number(e.target.value)) }))}
+                                        />
+                                        <p className="text-xs text-muted-foreground">Drawn randomly from the active bank.</p>
+                                    </div>
+                                </div>
+                            </div>
 
-                        {/* Exam settings */}
-                        <div>
-                            <p className="text-sm font-semibold mb-3">Theory Exam</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {/* Exam settings */}
+                            <div className="space-y-4 border-t pt-4 md:border-t-0 md:pt-0 md:border-l md:pl-6">
+                                <p className="text-sm font-semibold flex items-center gap-2"><Settings2 className="h-4 w-4 text-muted-foreground" /> Theory Exam</p>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="exam_question_count">Questions per Exam</Label>
+                                    <Input
+                                        id="exam_question_count"
+                                        type="number"
+                                        min={1}
+                                        max={200}
+                                        value={quizConfig.exam_question_count}
+                                        onChange={e => setQuizConfig(c => ({ ...c, exam_question_count: Math.max(1, Number(e.target.value)) }))}
+                                    />
+                                    <p className="text-xs text-muted-foreground">Sets length of the formal exam.</p>
+                                </div>
                                 <div className="space-y-1.5">
                                     <Label htmlFor="exam_pass_threshold">Pass Mark (%)</Label>
                                     <Input
@@ -312,39 +411,142 @@ export default function RefereeQuestionsAdmin() {
                                         value={Math.round(quizConfig.exam_pass_threshold * 100)}
                                         onChange={e => setQuizConfig(c => ({ ...c, exam_pass_threshold: Math.min(1, Math.max(0.5, Number(e.target.value) / 100)) }))}
                                     />
-                                    <p className="text-xs text-muted-foreground">Currently {Math.round(quizConfig.exam_pass_threshold * 100)}%</p>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label>Time Limit</Label>
-                                    <div className="flex items-center gap-3 pt-1.5">
-                                        <Switch
-                                            checked={quizConfig.exam_time_limit_enabled}
-                                            onCheckedChange={v => setQuizConfig(c => ({ ...c, exam_time_limit_enabled: v }))}
-                                        />
-                                        <span className="text-sm text-muted-foreground">{quizConfig.exam_time_limit_enabled ? 'Enabled' : 'Untimed'}</span>
-                                    </div>
+                                    <Label>Time Limit Mode</Label>
+                                    <Select value={quizConfig.exam_time_mode} onValueChange={v => setQuizConfig({ ...quizConfig, exam_time_mode: v })}>
+                                        <SelectTrigger><SelectValue placeholder="Select mode" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">None (Untimed)</SelectItem>
+                                            <SelectItem value="per_question">Per Question Only</SelectItem>
+                                            <SelectItem value="total">Overall Total Time Only</SelectItem>
+                                            <SelectItem value="both">Both (Total + Per Question)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                                {quizConfig.exam_time_limit_enabled && (
-                                    <div className="space-y-1.5">
-                                        <Label htmlFor="exam_time_per_q">Seconds per Question</Label>
-                                        <Input
-                                            id="exam_time_per_q"
-                                            type="number"
-                                            min={10}
-                                            max={300}
-                                            value={quizConfig.exam_time_per_question_seconds}
-                                            onChange={e => setQuizConfig(c => ({ ...c, exam_time_per_question_seconds: Math.max(10, Number(e.target.value)) }))}
-                                        />
-                                        <p className="text-xs text-muted-foreground">Total = questions × this value</p>
-                                    </div>
-                                )}
+
+                                <div className="grid grid-cols-2 gap-3 pt-2">
+                                    {['per_question', 'both'].includes(quizConfig.exam_time_mode) && (
+                                        <div className="space-y-1.5 bg-yellow-50/50 p-2 rounded border border-yellow-100">
+                                            <Label htmlFor="exam_time_per_q" className="text-xs">Seconds / Question</Label>
+                                            <Input
+                                                id="exam_time_per_q"
+                                                type="number"
+                                                className="h-8 text-sm"
+                                                min={10} max={300}
+                                                value={quizConfig.exam_time_per_question_seconds}
+                                                onChange={e => setQuizConfig(c => ({ ...c, exam_time_per_question_seconds: Math.max(10, Number(e.target.value)) }))}
+                                            />
+                                        </div>
+                                    )}
+                                    {['total', 'both'].includes(quizConfig.exam_time_mode) && (
+                                        <div className="space-y-1.5 bg-yellow-50/50 p-2 rounded border border-yellow-100">
+                                            <Label htmlFor="exam_total_time" className="text-xs">Total Exam Mins</Label>
+                                            <Input
+                                                id="exam_total_time"
+                                                type="number"
+                                                className="h-8 text-sm"
+                                                min={1} max={300}
+                                                value={Math.round(quizConfig.exam_total_time_seconds / 60)}
+                                                onChange={e => setQuizConfig(c => ({ ...c, exam_total_time_seconds: Math.max(1, Number(e.target.value)) * 60 }))}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex justify-end">
+                        <div className="flex justify-end pt-4 border-t">
                             <Button onClick={saveConfig} disabled={configSaving} className="gap-2">
                                 {configSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                                 Save Configuration
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="pb-3 border-b border-border/50 mb-4 bg-muted/10 rounded-t-xl">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div>
+                                <CardTitle className="text-base flex items-center gap-2"><Plus className="h-4 w-4" /> Bulk Import JSON</CardTitle>
+                                <CardDescription className="mt-1">Add many questions into a bank quickly.</CardDescription>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={() => window.open('/import-template.json', '_blank')}>Template 📄</Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-4">
+                                <Label>Destination</Label>
+                                <div className="flex gap-2 mb-2 p-1 bg-muted rounded-md w-fit">
+                                    <button
+                                        onClick={() => setImportBankMode('existing')}
+                                        className={`px-3 py-1 text-sm rounded-sm font-medium transition-colors ${importBankMode === 'existing' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:bg-muted-foreground/10'}`}
+                                    >
+                                        Existing Bank
+                                    </button>
+                                    <button
+                                        onClick={() => setImportBankMode('new')}
+                                        className={`px-3 py-1 text-sm rounded-sm font-medium transition-colors ${importBankMode === 'new' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:bg-muted-foreground/10'}`}
+                                    >
+                                        New Bank Version
+                                    </button>
+                                </div>
+
+                                {importBankMode === 'existing' ? (
+                                    <Select value={importTargetBankId} onValueChange={setImportTargetBankId}>
+                                        <SelectTrigger><SelectValue placeholder="Select target bank" /></SelectTrigger>
+                                        <SelectContent>
+                                            {banks.map(b => (
+                                                <SelectItem key={b.id} value={b.id}>{b.name} (v{b.version} - {b.discipline})</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <div className="space-y-3 p-3 border rounded-lg bg-muted/20">
+                                        <div className="space-y-1.5">
+                                            <Label>Bank Name &amp; Label</Label>
+                                            <Input placeholder="e.g. WKF Kata Exam 2026..." value={importNewBankName} onChange={e => setImportNewBankName(e.target.value)} />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label>Discipline</Label>
+                                            <Select value={importDiscipline} onValueChange={setImportDiscipline}>
+                                                <SelectTrigger><SelectValue placeholder="Select discipline" /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="kata">Kata</SelectItem>
+                                                    <SelectItem value="kumite">Kumite</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="flex justify-between">
+                                    <span>JSON Payload</span>
+                                    <span className="text-xs font-normal text-muted-foreground">Array of objects mapping to schema fields</span>
+                                </Label>
+                                <Textarea
+                                    className="font-mono text-xs h-32 md:h-full resize-y min-h-[140px]"
+                                    placeholder={`[
+  {
+    "question_text": "Is this a valid question?",
+    "correct_answer": true,
+    "explanation": "Yes because XYZ...",
+    "rule_reference": "Article 10"
+  }
+]`}
+                                    value={importJson}
+                                    onChange={e => setImportJson(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-2">
+                            <Button onClick={handleImportSelection} disabled={isImporting} className="gap-2">
+                                {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                Run Import
                             </Button>
                         </div>
                     </CardContent>

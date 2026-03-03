@@ -45,15 +45,28 @@ export default async function handler(request: Request) {
                 ORDER BY q.question_number ASC
             `);
         } else if (discipline) {
-            // Get from referee exam bank for this discipline
-            rows = await db.execute(sql`
-                SELECT q.* FROM referee_questions q
-                JOIN referee_question_banks b ON b.id = q.question_bank_id
-                WHERE b.discipline = ${discipline}::karate_discipline
-                  AND b.exam_type = 'referee'
-                  AND q.is_active = true
-                ORDER BY q.question_number ASC
-            `);
+            // Get from the currently active bank for this discipline
+            const configRes = await db.execute(sql`SELECT active_kata_bank_id, active_kumite_bank_id FROM referee_quiz_config LIMIT 1`);
+            const cfg = configRes.rows[0];
+            const activeBankId = discipline === 'kata' ? cfg?.active_kata_bank_id : cfg?.active_kumite_bank_id;
+
+            if (activeBankId) {
+                rows = await db.execute(sql`
+                    SELECT q.* FROM referee_questions q
+                    WHERE q.question_bank_id = ${activeBankId} AND q.is_active = true
+                    ORDER BY q.question_number ASC
+                `);
+            } else {
+                // Fallback: just get any bank for this discipline
+                rows = await db.execute(sql`
+                    SELECT q.* FROM referee_questions q
+                    JOIN referee_question_banks b ON b.id = q.question_bank_id
+                    WHERE b.discipline = ${discipline}::karate_discipline
+                      AND b.exam_type = 'referee'
+                      AND q.is_active = true
+                    ORDER BY q.question_number ASC
+                `);
+            }
         } else {
             // Return all referee questions
             rows = await db.execute(sql`
@@ -71,8 +84,57 @@ export default async function handler(request: Request) {
         return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
     }
 
-    // ── POST (Create question) ────────────────────────────────────────────────
+    // ── POST (Create question or Bulk Import) ─────────────────────────────────
     if (request.method === 'POST') {
+        const urlParams = new URL(request.url);
+
+        // Handle Bulk Import Action
+        if (urlParams.searchParams.get('action') === 'import') {
+            const body = await request.json();
+            const { bank_id, new_bank_name, discipline, questions } = body;
+
+            if (!questions || !Array.isArray(questions)) {
+                return new Response(JSON.stringify({ error: 'Array of questions required' }), { status: 400 });
+            }
+
+            let targetBankId = bank_id;
+
+            // Create a new bank if requested
+            if (new_bank_name && discipline) {
+                const bRes = await db.execute(sql`
+                    INSERT INTO referee_question_banks (name, discipline, exam_type, created_by, is_active)
+                    VALUES (${new_bank_name}, ${discipline}::karate_discipline, 'referee', ${payload.sub}, true)
+                    RETURNING id
+                `);
+                targetBankId = bRes.rows[0].id;
+            }
+
+            if (!targetBankId) {
+                return new Response(JSON.stringify({ error: 'Valid bank_id or new_bank_name required' }), { status: 400 });
+            }
+
+            // Get max current number
+            const maxNumResult = await db.execute(
+                sql`SELECT COALESCE(MAX(question_number), 0) as max FROM referee_questions WHERE question_bank_id = ${targetBankId}`
+            );
+            let nextNum = Number((maxNumResult.rows[0] as any).max) + 1;
+
+            let inserted = 0;
+            // Drizzle HTTP has a payload size limit so we do a simple loop, perfectly fine for a few dozen admin records
+            for (const q of questions) {
+                if (!q.question_text || q.correct_answer === undefined) continue;
+                await db.execute(sql`
+                    INSERT INTO referee_questions (question_bank_id, question_number, question_text, correct_answer, explanation, rule_reference, category, is_active, display_order)
+                    VALUES (${targetBankId}, ${nextNum}, ${q.question_text}, ${q.correct_answer}, ${q.explanation || null}, ${q.rule_reference || null}, ${q.category || null}, true, ${nextNum})
+                `);
+                nextNum++;
+                inserted++;
+            }
+
+            return new Response(JSON.stringify({ success: true, count: inserted, bank_id: targetBankId }), { status: 201 });
+        }
+
+        // Handle Single Question Create (existing behavior)
         const body = await request.json();
         const { question_text, correct_answer, explanation, rule_reference, category, question_bank_id } = body;
         if (!question_text || correct_answer === undefined || !question_bank_id) {

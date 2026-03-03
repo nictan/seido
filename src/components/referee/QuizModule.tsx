@@ -20,7 +20,6 @@ type QuizResult = {
 
 type QuizConfig = {
     quiz_question_count: number;
-    quiz_shuffle: boolean;
 };
 
 type QuizCategory = 'kata' | 'kumite' | 'mixed';
@@ -36,7 +35,7 @@ export function QuizModule() {
     const [category, setCategory] = useState<QuizCategory>('kata');
     const [questions, setQuestions] = useState<DBQuestion[]>([]);
     const [allQuestions, setAllQuestions] = useState<Record<string, DBQuestion[]>>({});
-    const [quizConfig, setQuizConfig] = useState<QuizConfig>({ quiz_question_count: 10, quiz_shuffle: true });
+    const [quizConfig, setQuizConfig] = useState<QuizConfig>({ quiz_question_count: 10 });
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState<(boolean | null)[]>([]);
     const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
@@ -58,7 +57,7 @@ export function QuizModule() {
         // Fetch config
         fetch('/api/referee/config', { headers })
             .then(r => r.ok ? r.json() : null)
-            .then(cfg => { if (cfg) setQuizConfig({ quiz_question_count: Number(cfg.quiz_question_count), quiz_shuffle: cfg.quiz_shuffle }); });
+            .then(cfg => { if (cfg) setQuizConfig({ quiz_question_count: Number(cfg.quiz_question_count) }); });
 
         // Fetch question banks
         const fetchBank = async (discipline: string) => {
@@ -71,8 +70,7 @@ export function QuizModule() {
     }, [session?.access_token]);
 
     function startQuiz() {
-        let pool = allQuestions[category] || [];
-        if (quizConfig.quiz_shuffle) pool = shuffle(pool);
+        let pool = shuffle(allQuestions[category] || []);
         const picked = pool.slice(0, quizConfig.quiz_question_count);
         setQuestions(picked);
         setAnswers(new Array(picked.length).fill(null));
@@ -117,7 +115,7 @@ export function QuizModule() {
                     <h2 className="text-xl font-bold">Quick Quiz</h2>
                     <p className="text-sm text-muted-foreground">
                         {qCount} random True / False questions from the official WKF referee exam bank.
-                        {quizConfig.quiz_shuffle && ' Questions are randomised.'}
+                        Questions are always randomised.
                     </p>
                 </div>
 

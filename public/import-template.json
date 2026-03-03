@@ -1,0 +1,20 @@
+[
+    {
+        "question_text": "Is this the first sample question?",
+        "correct_answer": true,
+        "explanation": "Yes, this is an example of an explanation.",
+        "rule_reference": "Article 1",
+        "category": "general"
+    },
+    {
+        "question_text": "Is the Earth flat?",
+        "correct_answer": false,
+        "explanation": "No, it is an oblate spheroid.",
+        "rule_reference": "",
+        "category": "science"
+    },
+    {
+        "question_text": "Can questions exclude the explanation, rule reference, and category?",
+        "correct_answer": true
+    }
+]
