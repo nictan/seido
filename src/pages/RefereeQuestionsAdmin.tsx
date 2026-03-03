@@ -121,6 +121,22 @@ export default function RefereeQuestionsAdmin() {
     }
 
     async function handleImportSelection() {
+        if (importBankMode === 'new') {
+            if (!importNewBankName.trim()) {
+                toast({ title: 'Validation', description: 'Please enter a name for the new bank.', variant: 'destructive' });
+                return;
+            }
+            if (!importDiscipline) {
+                toast({ title: 'Validation', description: 'Please select a discipline (Kata or Kumite).', variant: 'destructive' });
+                return;
+            }
+        } else {
+            if (!importTargetBankId) {
+                toast({ title: 'Validation', description: 'Please select an existing bank to import into.', variant: 'destructive' });
+                return;
+            }
+        }
+
         if (!importJson.trim()) {
             toast({ title: 'Validation', description: 'Please paste JSON payload.', variant: 'destructive' });
             return;
