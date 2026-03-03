@@ -144,6 +144,22 @@ export default async function handler(request: Request) {
                     remarks,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
+                }).onConflictDoUpdate({
+                    target: profiles.email,
+                    set: {
+                        userId, // Re-link to the new auth user ID
+                        firstName,
+                        lastName,
+                        dateOfBirth: safeDob,
+                        mobile,
+                        gender: safeGender,
+                        emergencyContactName,
+                        emergencyContactRelationship,
+                        emergencyContactPhone,
+                        emergencyContactEmail,
+                        remarks,
+                        updatedAt: new Date().toISOString(),
+                    }
                 }).returning();
 
                 // 2. Create Karate Profile
@@ -152,6 +168,12 @@ export default async function handler(request: Request) {
                     dojo: dojo || 'HQ',
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
+                }).onConflictDoUpdate({
+                    target: karateProfiles.profileId,
+                    set: {
+                        dojo: dojo || 'HQ',
+                        updatedAt: new Date().toISOString(),
+                    }
                 });
 
                 // 3. Create initial Rank History
@@ -183,12 +205,18 @@ export default async function handler(request: Request) {
                     }
                 }
 
-                await db.insert(rankHistories).values({
-                    profileId: newProfile.id,
-                    rankId: defaultRankId,
-                    effectiveDate: new Date().toISOString().split('T')[0],
-                    isCurrent: true,
+                const existingRank = await db.query.rankHistories.findFirst({
+                    where: (rh, { eq }) => eq(rh.profileId, newProfile.id)
                 });
+
+                if (!existingRank) {
+                    await db.insert(rankHistories).values({
+                        profileId: newProfile.id,
+                        rankId: defaultRankId,
+                        effectiveDate: new Date().toISOString().split('T')[0],
+                        isCurrent: true,
+                    });
+                }
 
                 const result = newProfile;
 
