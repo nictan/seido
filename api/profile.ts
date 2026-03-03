@@ -1,6 +1,6 @@
 import { db } from './_db.js';
 import { profiles, karateProfiles, rankHistories, ranks } from '../src/db/schema.js';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 import { verifyAuth } from './_auth.js';
 
 export const config = {
@@ -64,7 +64,13 @@ export default async function handler(request: Request) {
                 });
             }
 
-            return new Response(JSON.stringify(result), {
+            // Attach user_features
+            const featuresRows = await db.execute(sql`
+                SELECT feature, enabled FROM user_features WHERE profile_id = ${result.id}
+            `);
+            const resultWithFeatures = { ...result, user_features: featuresRows.rows };
+
+            return new Response(JSON.stringify(resultWithFeatures), {
                 headers: { 'Content-Type': 'application/json' }
             });
         } catch (error) {
@@ -216,6 +222,23 @@ export default async function handler(request: Request) {
                         effectiveDate: new Date().toISOString().split('T')[0],
                         isCurrent: true,
                     });
+                }
+
+                // 4. Seed user_features from site_config defaults
+                const siteConfigRows = await db.execute(sql`SELECT key, value FROM site_config`);
+                const FEATURE_MAP: Record<string, string> = {
+                    'default_grading': 'grading',
+                    'default_referee_prep': 'referee_prep',
+                };
+                for (const row of siteConfigRows.rows as any[]) {
+                    const featureName = FEATURE_MAP[row.key];
+                    if (!featureName) continue;
+                    const enabled = row.value === 'true';
+                    await db.execute(sql`
+                        INSERT INTO user_features (profile_id, feature, enabled)
+                        VALUES (${newProfile.id}, ${featureName}, ${enabled})
+                        ON CONFLICT (profile_id, feature) DO NOTHING
+                    `);
                 }
 
                 const result = newProfile;

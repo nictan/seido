@@ -70,7 +70,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           is_admin: data.isAdmin,
           is_instructor: data.isInstructor,
           karate_profile: data.karateProfile,
-          rank_histories: data.rankHistories
+          rank_histories: data.rankHistories,
+          features: Object.fromEntries(
+            (data.user_features || []).map((f: { feature: string; enabled: boolean }) => [f.feature, f.enabled])
+          ) as { grading?: boolean; referee_prep?: boolean },
         };
         setProfile(mappedProfile);
       } else {

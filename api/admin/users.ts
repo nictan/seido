@@ -65,7 +65,7 @@ export default async function handler(request: Request) {
             }
 
             const body = await request.json();
-            const { profileId, isAdmin, isInstructor, isStudent, dojo } = body;
+            const { profileId, isAdmin, isInstructor, isStudent, dojo, features } = body;
 
             if (!profileId) {
                 return new Response(JSON.stringify({ error: 'Missing profileId' }), { status: 400 });
@@ -93,6 +93,18 @@ export default async function handler(request: Request) {
                     SET dojo = ${dojo}, updated_at = NOW()
                     WHERE profile_id = ${profileId}
                 `);
+            }
+
+            // 3. Upsert user_features
+            if (features && typeof features === 'object') {
+                for (const [feature, enabled] of Object.entries(features)) {
+                    await db.execute(sql`
+                        INSERT INTO user_features (profile_id, feature, enabled, updated_at)
+                        VALUES (${profileId}, ${feature}, ${!!enabled}, NOW())
+                        ON CONFLICT (profile_id, feature)
+                        DO UPDATE SET enabled = ${!!enabled}, updated_at = NOW()
+                    `);
+                }
             }
 
             return new Response(JSON.stringify({ success: true, message: 'User updated successfully' }), { status: 200 });

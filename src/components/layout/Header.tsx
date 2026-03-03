@@ -30,20 +30,24 @@ export function Header() {
           </Link>
 
           <nav className="hidden md:flex items-center space-x-1">
-            <Link
-              to="/referee"
-              className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors flex items-center gap-2"
-            >
-              <GraduationCap className="h-4 w-4" />
-              Referee Prep
-            </Link>
-            <Link
-              to="/grading"
-              className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors flex items-center gap-2"
-            >
-              <ClipboardList className="h-4 w-4" />
-              Grading
-            </Link>
+            {(profile?.features?.referee_prep || profile?.is_admin) && (
+              <Link
+                to="/referee"
+                className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors flex items-center gap-2"
+              >
+                <GraduationCap className="h-4 w-4" />
+                Referee Prep
+              </Link>
+            )}
+            {(profile?.features?.grading !== false || profile?.is_admin) && (
+              <Link
+                to="/grading"
+                className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors flex items-center gap-2"
+              >
+                <ClipboardList className="h-4 w-4" />
+                Grading
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -95,9 +99,11 @@ export function Header() {
                 <Link to="/profile" className="text-sm font-medium transition-colors hover:text-primary">
                   Profile
                 </Link>
-                <Link to="/grading" className="text-sm font-medium transition-colors hover:text-primary">
-                  Grading
-                </Link>
+                {(profile?.features?.grading !== false || profile?.is_admin) && (
+                  <Link to="/grading" className="text-sm font-medium transition-colors hover:text-primary">
+                    Grading
+                  </Link>
+                )}
                 {profile?.is_instructor && (
                   <Link to="/instructor" className="text-sm font-medium transition-colors hover:text-primary text-blue-600">
                     Instructor

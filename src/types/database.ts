@@ -37,6 +37,11 @@ export type Profile = {
   updated_at: string;
   karate_profile?: KarateProfile;
   rank_histories?: RankHistory[];
+  features?: {
+    grading?: boolean;
+    referee_prep?: boolean;
+    [key: string]: boolean | undefined;
+  };
 };
 
 export type Rank = {

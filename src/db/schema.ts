@@ -111,6 +111,7 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
     }),
     rankHistories: many(rankHistories),
     gradingApplications: many(gradingApplications),
+    features: many(userFeatures),
 }));
 
 export const karateProfilesRelations = relations(karateProfiles, ({ one }) => ({
@@ -285,3 +286,41 @@ export const gradingPeriodRanksRelations = relations(gradingPeriodRanks, ({ one 
         references: [ranks.id],
     }),
 }));
+
+// ─── Feature Access Control ────────────────────────────────────────────────
+
+/** Per-user feature flags. One row per (profile, feature). */
+export const userFeatures = pgTable('user_features', {
+    id: uuid('id').defaultRandom().primaryKey().notNull(),
+    profileId: uuid('profile_id').notNull(),
+    feature: text('feature').notNull(),   // 'grading' | 'referee_prep'
+    enabled: boolean('enabled').default(true).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+    foreignKey({
+        columns: [table.profileId],
+        foreignColumns: [profiles.id],
+        name: 'user_features_profile_id_fkey',
+    }).onDelete('cascade'),
+    unique('user_features_profile_feature_key').on(table.profileId, table.feature),
+]);
+
+export const userFeaturesRelations = relations(userFeatures, ({ one }) => ({
+    profile: one(profiles, {
+        fields: [userFeatures.profileId],
+        references: [profiles.id],
+    }),
+}));
+
+/**
+ * Site-wide configuration.
+ * Used to control default features for new users.
+ * Keys: 'default_grading', 'default_referee_prep'
+ * Values: 'true' | 'false'
+ */
+export const siteConfig = pgTable('site_config', {
+    key: text('key').primaryKey().notNull(),
+    value: text('value').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});

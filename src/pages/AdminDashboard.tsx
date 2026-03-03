@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/layout/Header";
@@ -15,6 +14,7 @@ import { Loader2, RefreshCw, Shield, GraduationCap, Building2, Trash2, Search, F
 import { useToast } from "@/hooks/use-toast";
 import { AdminResetPasswordDialog } from "@/components/admin/AdminResetPasswordDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Separator } from "@/components/ui/separator";
 
 type AdminUser = {
     profileId: string;
@@ -45,8 +45,44 @@ export default function AdminDashboard() {
     const [editFormData, setEditFormData] = useState({
         isAdmin: false,
         isInstructor: false,
-        dojo: 'HQ'
+        dojo: 'HQ',
+        features: { grading: true, referee_prep: false }
     });
+
+    // Site Config State
+    const [siteConfig, setSiteConfig] = useState({ default_grading: true, default_referee_prep: false });
+    const [savingConfig, setSavingConfig] = useState(false);
+
+    const fetchSiteConfig = async () => {
+        try {
+            const res = await fetch('/api/admin/features', {
+                headers: { Authorization: `Bearer ${session?.access_token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setSiteConfig(data);
+            }
+        } catch (e) { console.error('Failed to fetch site config', e); }
+    };
+
+    const saveSiteConfig = async (newConfig: typeof siteConfig) => {
+        setSavingConfig(true);
+        try {
+            const res = await fetch('/api/admin/features', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+                body: JSON.stringify(newConfig),
+            });
+            if (res.ok) {
+                toast({ title: 'Saved', description: 'Default feature settings updated.' });
+                setSiteConfig(newConfig);
+            } else {
+                toast({ title: 'Error', description: 'Failed to save config.', variant: 'destructive' });
+            }
+        } catch (e) {
+            toast({ title: 'Error', description: 'Unexpected error.', variant: 'destructive' });
+        } finally { setSavingConfig(false); }
+    };
 
     // Delete Dialog State
     const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
@@ -74,17 +110,23 @@ export default function AdminDashboard() {
     useEffect(() => {
         if (session?.access_token && profile?.is_admin) {
             fetchUsers();
+            fetchSiteConfig();
         } else if (!authLoading && !profile?.is_admin) {
-            setLoading(false); // Stop loading if not admin
+            setLoading(false);
         }
     }, [session, profile, authLoading]);
 
     const handleEditUser = (user: AdminUser) => {
         setEditingUser(user);
+        // Load current features from user row — fall back to site defaults
         setEditFormData({
             isAdmin: user.isAdmin,
             isInstructor: user.isInstructor,
-            dojo: user.dojo || 'HQ'
+            dojo: user.dojo || 'HQ',
+            features: {
+                grading: (user as any).features?.grading ?? siteConfig.default_grading,
+                referee_prep: (user as any).features?.referee_prep ?? siteConfig.default_referee_prep,
+            }
         });
         setEditUserOpen(true);
     };
@@ -355,6 +397,50 @@ export default function AdminDashboard() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Site Configuration */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Site Configuration</CardTitle>
+                        <CardDescription>Default features enabled for all new members when they join.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="flex items-center justify-between space-x-2">
+                            <Label htmlFor="cfg-grading" className="flex flex-col space-y-1">
+                                <span>Grading</span>
+                                <span className="font-normal text-sm text-muted-foreground">New members can submit grading applications by default.</span>
+                            </Label>
+                            <Switch
+                                id="cfg-grading"
+                                checked={siteConfig.default_grading}
+                                onCheckedChange={(c) => {
+                                    const next = { ...siteConfig, default_grading: c };
+                                    saveSiteConfig(next);
+                                }}
+                                disabled={savingConfig}
+                            />
+                        </div>
+                        <Separator />
+                        <div className="flex items-center justify-between space-x-2">
+                            <Label htmlFor="cfg-referee" className="flex flex-col space-y-1">
+                                <span>Referee Prep</span>
+                                <span className="font-normal text-sm text-muted-foreground">New members get access to the Referee Study module by default.</span>
+                            </Label>
+                            <Switch
+                                id="cfg-referee"
+                                checked={siteConfig.default_referee_prep}
+                                onCheckedChange={(c) => {
+                                    const next = { ...siteConfig, default_referee_prep: c };
+                                    saveSiteConfig(next);
+                                }}
+                                disabled={savingConfig}
+                            />
+                        </div>
+                        <p className="text-xs text-muted-foreground pt-2">
+                            ⚠ Changes apply to new members only. To change access for existing members, use <strong>Edit Roles</strong> above.
+                        </p>
+                    </CardContent>
+                </Card>
             </div>
 
             <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>
@@ -364,28 +450,65 @@ export default function AdminDashboard() {
                         <DialogDescription>Modify permissions and assignments.</DialogDescription>
                     </DialogHeader>
                     <div className="py-4 space-y-6">
-                        <div className="flex items-center justify-between space-x-2">
-                            <Label htmlFor="is-admin" className="flex flex-col space-y-1">
-                                <span>Administrator</span>
-                                <span className="font-normal text-xs text-muted-foreground"> Grants full access to this dashboard.</span>
-                            </Label>
-                            <Switch
-                                id="is-admin"
-                                checked={editFormData.isAdmin}
-                                onCheckedChange={(c) => setEditFormData({ ...editFormData, isAdmin: c })}
-                            />
+                        {/* Roles */}
+                        <div className="space-y-4">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Roles</p>
+                            <div className="flex items-center justify-between space-x-2">
+                                <Label htmlFor="is-admin" className="flex flex-col space-y-1">
+                                    <span>Administrator</span>
+                                    <span className="font-normal text-xs text-muted-foreground">Grants full access to this dashboard.</span>
+                                </Label>
+                                <Switch
+                                    id="is-admin"
+                                    checked={editFormData.isAdmin}
+                                    onCheckedChange={(c) => setEditFormData({ ...editFormData, isAdmin: c })}
+                                />
+                            </div>
+                            <div className="flex items-center justify-between space-x-2">
+                                <Label htmlFor="is-instructor" className="flex flex-col space-y-1">
+                                    <span>Instructor</span>
+                                    <span className="font-normal text-xs text-muted-foreground">Grants access to the Instructor Dashboard.</span>
+                                </Label>
+                                <Switch
+                                    id="is-instructor"
+                                    checked={editFormData.isInstructor}
+                                    onCheckedChange={(c) => setEditFormData({ ...editFormData, isInstructor: c })}
+                                />
+                            </div>
                         </div>
-                        <div className="flex items-center justify-between space-x-2">
-                            <Label htmlFor="is-instructor" className="flex flex-col space-y-1">
-                                <span>Instructor</span>
-                                <span className="font-normal text-xs text-muted-foreground"> Grants access to Grading Management.</span>
-                            </Label>
-                            <Switch
-                                id="is-instructor"
-                                checked={editFormData.isInstructor}
-                                onCheckedChange={(c) => setEditFormData({ ...editFormData, isInstructor: c })}
-                            />
+
+                        <Separator />
+
+                        {/* Feature Access */}
+                        <div className="space-y-4">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Feature Access</p>
+                            <div className="flex items-center justify-between space-x-2">
+                                <Label htmlFor="feat-grading" className="flex flex-col space-y-1">
+                                    <span>Grading</span>
+                                    <span className="font-normal text-xs text-muted-foreground">Allow student to submit grading applications.</span>
+                                </Label>
+                                <Switch
+                                    id="feat-grading"
+                                    checked={editFormData.features.grading}
+                                    onCheckedChange={(c) => setEditFormData({ ...editFormData, features: { ...editFormData.features, grading: c } })}
+                                />
+                            </div>
+                            <div className="flex items-center justify-between space-x-2">
+                                <Label htmlFor="feat-referee" className="flex flex-col space-y-1">
+                                    <span>Referee Prep</span>
+                                    <span className="font-normal text-xs text-muted-foreground">Allow access to the Referee Study module.</span>
+                                </Label>
+                                <Switch
+                                    id="feat-referee"
+                                    checked={editFormData.features.referee_prep}
+                                    onCheckedChange={(c) => setEditFormData({ ...editFormData, features: { ...editFormData.features, referee_prep: c } })}
+                                />
+                            </div>
                         </div>
+
+                        <Separator />
+
+                        {/* Dojo */}
                         <div className="space-y-2">
                             <Label>Dojo Assignment</Label>
                             <Select
