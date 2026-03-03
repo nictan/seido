@@ -4,7 +4,6 @@ import { Header } from '../components/layout/Header';
 import { useToast } from '../hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Loader2, CheckCircle, XCircle, ChevronDown, ChevronUp, BookOpen, Settings2, Save } from 'lucide-react';
-import { Switch } from '../components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../components/ui/dialog';
