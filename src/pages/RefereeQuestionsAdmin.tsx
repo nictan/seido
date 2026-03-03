@@ -287,6 +287,22 @@ export default function RefereeQuestionsAdmin() {
         }
     }
 
+    async function handleDeleteBank(bankId: string) {
+        if (!confirm('Are you absolutely sure you want to delete this ENTIRE bank and ALL its questions? This cannot be undone.')) return;
+        const res = await fetch(`/api/referee/questions?action=bank&bank_id=${bankId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${session?.access_token}` },
+        });
+        if (res.ok) {
+            toast({ title: 'Deleted', description: 'Question bank and all nested questions removed.' });
+            if (expandedBank === bankId) setExpandedBank(null);
+            fetchBanks();
+        } else {
+            const err = await res.json();
+            toast({ title: 'Error', description: err.error || 'Failed to delete bank.', variant: 'destructive' });
+        }
+    }
+
     async function toggleActive(q: Question) {
         const res = await fetch('/api/referee/questions', {
             method: 'PUT',
@@ -570,8 +586,17 @@ export default function RefereeQuestionsAdmin() {
                                                 <Badge variant="outline">v{bank.version}</Badge>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <span className="text-sm text-muted-foreground">{bank.question_count} questions</span>
-                                                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                                <span className="text-sm text-muted-foreground mr-2">{bank.question_count} questions</span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="w-8 h-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteBank(bank.id); }}
+                                                    title="Delete Entire Bank"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                                {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                                             </div>
                                         </div>
                                     </CardHeader>

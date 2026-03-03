@@ -176,6 +176,28 @@ export default async function handler(request: Request) {
 
     // ── DELETE ────────────────────────────────────────────────────────────────
     if (request.method === 'DELETE') {
+        const action = url.searchParams.get('action');
+
+        if (action === 'bank') {
+            const bankId = url.searchParams.get('bank_id');
+            if (!bankId) return new Response(JSON.stringify({ error: 'Missing bank_id' }), { status: 400 });
+
+            // Check if bank is currently active in config
+            const checkConfig = await db.execute(sql`
+                SELECT id FROM referee_quiz_config 
+                WHERE active_kata_bank_id = ${bankId} OR active_kumite_bank_id = ${bankId}
+                LIMIT 1
+            `);
+
+            if (checkConfig.rows.length > 0) {
+                return new Response(JSON.stringify({ error: 'Cannot delete an active bank. Please change the active bank config first.' }), { status: 400 });
+            }
+
+            // Questions have ON DELETE CASCADE so deleting the bank deletes the questions.
+            await db.execute(sql`DELETE FROM referee_question_banks WHERE id = ${bankId}`);
+            return new Response(JSON.stringify({ success: true }), { status: 200 });
+        }
+
         const id = url.searchParams.get('id');
         if (!id) return new Response(JSON.stringify({ error: 'Missing id' }), { status: 400 });
         await db.execute(sql`DELETE FROM referee_questions WHERE id = ${id}`);
