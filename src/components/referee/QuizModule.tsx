@@ -18,6 +18,11 @@ type QuizResult = {
     isCorrect: boolean;
 };
 
+type QuizConfig = {
+    quiz_question_count: number;
+    quiz_shuffle: boolean;
+};
+
 type QuizCategory = 'kata' | 'kumite' | 'mixed';
 type Phase = 'select' | 'quiz' | 'results';
 
@@ -31,6 +36,7 @@ export function QuizModule() {
     const [category, setCategory] = useState<QuizCategory>('kata');
     const [questions, setQuestions] = useState<DBQuestion[]>([]);
     const [allQuestions, setAllQuestions] = useState<Record<string, DBQuestion[]>>({});
+    const [quizConfig, setQuizConfig] = useState<QuizConfig>({ quiz_question_count: 10, quiz_shuffle: true });
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState<(boolean | null)[]>([]);
     const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
@@ -43,15 +49,21 @@ export function QuizModule() {
     }));
     const score = results.filter(r => r.isCorrect).length;
 
-    // Pre-fetch question banks on mount
+    // Pre-fetch questions + config on mount
     useEffect(() => {
         if (!session?.access_token) return;
+
+        const headers = { Authorization: `Bearer ${session.access_token}` };
+
+        // Fetch config
+        fetch('/api/referee/config', { headers })
+            .then(r => r.ok ? r.json() : null)
+            .then(cfg => { if (cfg) setQuizConfig({ quiz_question_count: Number(cfg.quiz_question_count), quiz_shuffle: cfg.quiz_shuffle }); });
+
+        // Fetch question banks
         const fetchBank = async (discipline: string) => {
-            const res = await fetch(`/api/referee/questions?discipline=${discipline}`, {
-                headers: { Authorization: `Bearer ${session.access_token}` },
-            });
-            if (res.ok) return await res.json() as DBQuestion[];
-            return [];
+            const res = await fetch(`/api/referee/questions?discipline=${discipline}`, { headers });
+            return res.ok ? (await res.json() as DBQuestion[]) : [];
         };
         Promise.all([fetchBank('kata'), fetchBank('kumite')]).then(([kata, kumite]) => {
             setAllQuestions({ kata, kumite, mixed: [...kata, ...kumite] });
@@ -59,8 +71,9 @@ export function QuizModule() {
     }, [session?.access_token]);
 
     function startQuiz() {
-        const pool = allQuestions[category] || [];
-        const picked = shuffle(pool).slice(0, 10);
+        let pool = allQuestions[category] || [];
+        if (quizConfig.quiz_shuffle) pool = shuffle(pool);
+        const picked = pool.slice(0, quizConfig.quiz_question_count);
         setQuestions(picked);
         setAnswers(new Array(picked.length).fill(null));
         setCurrentIndex(0);
@@ -92,8 +105,9 @@ export function QuizModule() {
     }
 
     const bankLoaded = Object.keys(allQuestions).length > 0;
-    const scoreColor = score >= 8 ? 'text-green-600' : score >= 5 ? 'text-amber-600' : 'text-red-600';
-    const scoreBg = score >= 8 ? 'bg-green-50 border-green-200' : score >= 5 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200';
+    const qCount = quizConfig.quiz_question_count;
+    const scoreColor = score >= Math.ceil(qCount * 0.8) ? 'text-green-600' : score >= Math.ceil(qCount * 0.5) ? 'text-amber-600' : 'text-red-600';
+    const scoreBg = score >= Math.ceil(qCount * 0.8) ? 'bg-green-50 border-green-200' : score >= Math.ceil(qCount * 0.5) ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200';
 
     // ── Select Phase ──────────────────────────────────────────────────────────
     if (phase === 'select') {
@@ -101,7 +115,10 @@ export function QuizModule() {
             <div className="max-w-md mx-auto space-y-6 py-4">
                 <div className="text-center space-y-2">
                     <h2 className="text-xl font-bold">Quick Quiz</h2>
-                    <p className="text-sm text-muted-foreground">10 random True / False questions from the official WKF referee exam bank.</p>
+                    <p className="text-sm text-muted-foreground">
+                        {qCount} random True / False questions from the official WKF referee exam bank.
+                        {quizConfig.quiz_shuffle && ' Questions are randomised.'}
+                    </p>
                 </div>
 
                 {!bankLoaded ? (
@@ -130,7 +147,7 @@ export function QuizModule() {
                             onClick={startQuiz}
                             className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-colors"
                         >
-                            Start Quiz →
+                            Start Quiz ({qCount} questions) →
                         </button>
                     </>
                 )}
@@ -142,7 +159,6 @@ export function QuizModule() {
     if (phase === 'quiz') {
         const q = questions[currentIndex];
         const progress = (currentIndex / questions.length) * 100;
-
         return (
             <div className="max-w-lg mx-auto space-y-6 py-4">
                 <div className="space-y-1">
@@ -196,9 +212,9 @@ export function QuizModule() {
         <div className="max-w-lg mx-auto space-y-6 py-4">
             <div className={`border-2 rounded-2xl p-8 text-center ${scoreBg}`}>
                 <Trophy className={`h-10 w-10 mx-auto mb-3 ${scoreColor}`} />
-                <div className={`text-5xl font-black ${scoreColor}`}>{score}<span className="text-2xl font-semibold">/10</span></div>
+                <div className={`text-5xl font-black ${scoreColor}`}>{score}<span className="text-2xl font-semibold">/{questions.length}</span></div>
                 <p className={`font-semibold mt-1 ${scoreColor}`}>
-                    {score >= 8 ? "Excellent — you're ready!" : score >= 5 ? 'Good effort — keep studying.' : 'Keep practising — review below.'}
+                    {score >= Math.ceil(qCount * 0.8) ? "Excellent — you're ready!" : score >= Math.ceil(qCount * 0.5) ? 'Good effort — keep studying.' : 'Keep practising — review below.'}
                 </p>
             </div>
 

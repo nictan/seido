@@ -3,7 +3,8 @@ import { useAuth } from '../hooks/useAuth';
 import { Header } from '../components/layout/Header';
 import { useToast } from '../hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Pencil, Trash2, Loader2, CheckCircle, XCircle, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, CheckCircle, XCircle, ChevronDown, ChevronUp, BookOpen, Settings2, Save } from 'lucide-react';
+import { Switch } from '../components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../components/ui/dialog';
@@ -33,6 +34,14 @@ type Question = {
     is_active: boolean;
 };
 
+type QuizConfig = {
+    quiz_question_count: number;
+    quiz_shuffle: boolean;
+    exam_time_limit_enabled: boolean;
+    exam_time_per_question_seconds: number;
+    exam_pass_threshold: number;
+};
+
 export default function RefereeQuestionsAdmin() {
     const { session, profile } = useAuth();
     const { toast } = useToast();
@@ -42,6 +51,14 @@ export default function RefereeQuestionsAdmin() {
     const [expandedBank, setExpandedBank] = useState<string | null>(null);
     const [bankQuestions, setBankQuestions] = useState<Record<string, Question[]>>({});
     const [loading, setLoading] = useState(true);
+    const [configSaving, setConfigSaving] = useState(false);
+    const [quizConfig, setQuizConfig] = useState<QuizConfig>({
+        quiz_question_count: 10,
+        quiz_shuffle: true,
+        exam_time_limit_enabled: false,
+        exam_time_per_question_seconds: 60,
+        exam_pass_threshold: 0.70,
+    });
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -61,7 +78,42 @@ export default function RefereeQuestionsAdmin() {
             return;
         }
         fetchBanks();
+        fetchConfig();
     }, [profile]);
+
+    async function fetchConfig() {
+        const res = await fetch('/api/referee/config', {
+            headers: { Authorization: `Bearer ${session?.access_token}` },
+        });
+        if (res.ok) {
+            const cfg = await res.json();
+            setQuizConfig({
+                quiz_question_count: Number(cfg.quiz_question_count),
+                quiz_shuffle: cfg.quiz_shuffle,
+                exam_time_limit_enabled: cfg.exam_time_limit_enabled,
+                exam_time_per_question_seconds: Number(cfg.exam_time_per_question_seconds),
+                exam_pass_threshold: Number(cfg.exam_pass_threshold),
+            });
+        }
+    }
+
+    async function saveConfig() {
+        setConfigSaving(true);
+        const res = await fetch('/api/referee/config', {
+            method: 'PUT',
+            headers: {
+                Authorization: `Bearer ${session?.access_token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(quizConfig),
+        });
+        setConfigSaving(false);
+        if (res.ok) {
+            toast({ title: 'Saved', description: 'Quiz configuration updated.' });
+        } else {
+            toast({ title: 'Error', description: 'Failed to save configuration.', variant: 'destructive' });
+        }
+    }
 
     async function fetchBanks() {
         try {
@@ -205,6 +257,98 @@ export default function RefereeQuestionsAdmin() {
                         <p className="text-muted-foreground text-sm">Manage WKF referee exam questions across Kata and Kumite</p>
                     </div>
                 </div>
+
+                {/* Quiz / Exam Configuration */}
+                <Card>
+                    <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                            <Settings2 className="h-4 w-4 text-primary" />
+                            <CardTitle className="text-base">Quiz &amp; Exam Configuration</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                        {/* Quiz settings */}
+                        <div>
+                            <p className="text-sm font-semibold mb-3">Quick Quiz</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="quiz_question_count">Questions per Quiz</Label>
+                                    <Input
+                                        id="quiz_question_count"
+                                        type="number"
+                                        min={1}
+                                        max={50}
+                                        value={quizConfig.quiz_question_count}
+                                        onChange={e => setQuizConfig(c => ({ ...c, quiz_question_count: Math.max(1, Number(e.target.value)) }))}
+                                    />
+                                    <p className="text-xs text-muted-foreground">How many questions are drawn per quiz session</p>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label>Randomise Question Order</Label>
+                                    <div className="flex items-center gap-3 pt-1.5">
+                                        <Switch
+                                            checked={quizConfig.quiz_shuffle}
+                                            onCheckedChange={v => setQuizConfig(c => ({ ...c, quiz_shuffle: v }))}
+                                        />
+                                        <span className="text-sm text-muted-foreground">{quizConfig.quiz_shuffle ? 'Enabled' : 'Disabled'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border-t" />
+
+                        {/* Exam settings */}
+                        <div>
+                            <p className="text-sm font-semibold mb-3">Theory Exam</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="exam_pass_threshold">Pass Mark (%)</Label>
+                                    <Input
+                                        id="exam_pass_threshold"
+                                        type="number"
+                                        min={50}
+                                        max={100}
+                                        value={Math.round(quizConfig.exam_pass_threshold * 100)}
+                                        onChange={e => setQuizConfig(c => ({ ...c, exam_pass_threshold: Math.min(1, Math.max(0.5, Number(e.target.value) / 100)) }))}
+                                    />
+                                    <p className="text-xs text-muted-foreground">Currently {Math.round(quizConfig.exam_pass_threshold * 100)}%</p>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label>Time Limit</Label>
+                                    <div className="flex items-center gap-3 pt-1.5">
+                                        <Switch
+                                            checked={quizConfig.exam_time_limit_enabled}
+                                            onCheckedChange={v => setQuizConfig(c => ({ ...c, exam_time_limit_enabled: v }))}
+                                        />
+                                        <span className="text-sm text-muted-foreground">{quizConfig.exam_time_limit_enabled ? 'Enabled' : 'Untimed'}</span>
+                                    </div>
+                                </div>
+                                {quizConfig.exam_time_limit_enabled && (
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="exam_time_per_q">Seconds per Question</Label>
+                                        <Input
+                                            id="exam_time_per_q"
+                                            type="number"
+                                            min={10}
+                                            max={300}
+                                            value={quizConfig.exam_time_per_question_seconds}
+                                            onChange={e => setQuizConfig(c => ({ ...c, exam_time_per_question_seconds: Math.max(10, Number(e.target.value)) }))}
+                                        />
+                                        <p className="text-xs text-muted-foreground">Total = questions × this value</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <Button onClick={saveConfig} disabled={configSaving} className="gap-2">
+                                {configSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                Save Configuration
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* Banks */}
                 <div className="space-y-4">

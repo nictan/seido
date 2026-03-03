@@ -20,7 +20,12 @@ type QuizResult = {
 
 type ExamCategory = 'kata' | 'kumite';
 type ExamPhase = 'select' | 'exam' | 'results';
-const PASS_THRESHOLD = 0.7;
+
+type ExamConfig = {
+    exam_pass_threshold: number;
+    exam_time_limit_enabled: boolean;
+    exam_time_per_question_seconds: number;
+};
 
 function formatTime(seconds: number): string {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -34,6 +39,7 @@ export function TheoryExam() {
     const [category, setCategory] = useState<ExamCategory>('kata');
     const [questions, setQuestions] = useState<DBQuestion[]>([]);
     const [bankCounts, setBankCounts] = useState<Record<string, number>>({});
+    const [examConfig, setExamConfig] = useState<ExamConfig>({ exam_pass_threshold: 0.7, exam_time_limit_enabled: false, exam_time_per_question_seconds: 60 });
     const [loading, setLoading] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState<(boolean | null)[]>([]);
@@ -49,15 +55,28 @@ export function TheoryExam() {
     }));
     const score = results.filter(r => r.isCorrect).length;
     const percentage = questions.length > 0 ? score / questions.length : 0;
-    const passed = percentage >= PASS_THRESHOLD;
+    const passed = percentage >= examConfig.exam_pass_threshold;
 
     useEffect(() => {
         if (!session?.access_token) return;
+        const headers = { Authorization: `Bearer ${session.access_token}` };
+
+        // Fetch config
+        fetch('/api/referee/config', { headers })
+            .then(r => r.ok ? r.json() : null)
+            .then(cfg => {
+                if (cfg) setExamConfig({
+                    exam_pass_threshold: Number(cfg.exam_pass_threshold),
+                    exam_time_limit_enabled: cfg.exam_time_limit_enabled,
+                    exam_time_per_question_seconds: Number(cfg.exam_time_per_question_seconds),
+                });
+            });
+
+        // Fetch bank counts
         Promise.all(
             (['kata', 'kumite'] as ExamCategory[]).map(d =>
-                fetch(`/api/referee/questions?discipline=${d}`, {
-                    headers: { Authorization: `Bearer ${session.access_token}` },
-                }).then(r => r.ok ? r.json() : []).then((qs: DBQuestion[]) => [d, qs.length] as const)
+                fetch(`/api/referee/questions?discipline=${d}`, { headers })
+                    .then(r => r.ok ? r.json() : []).then((qs: DBQuestion[]) => [d, qs.length] as const)
             )
         ).then(entries => setBankCounts(Object.fromEntries(entries)));
     }, [session?.access_token]);
@@ -75,7 +94,18 @@ export function TheoryExam() {
         setSelectedAnswer(null);
         setElapsed(0);
         const start = Date.now();
-        const ref = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+        const totalLimit = examConfig.exam_time_limit_enabled
+            ? bank.length * examConfig.exam_time_per_question_seconds
+            : null;
+        const ref = setInterval(() => {
+            const newElapsed = Math.floor((Date.now() - start) / 1000);
+            setElapsed(newElapsed);
+            // Auto-submit when time limit reached
+            if (totalLimit && newElapsed >= totalLimit) {
+                clearInterval(ref);
+                setPhase('results');
+            }
+        }, 1000);
         setTimerRef(ref);
         setLoading(false);
         setPhase('exam');
@@ -116,7 +146,7 @@ export function TheoryExam() {
             <div className="max-w-md mx-auto space-y-6 py-4">
                 <div className="text-center space-y-2">
                     <h2 className="text-xl font-bold">Simulated Theory Exam</h2>
-                    <p className="text-sm text-muted-foreground">Full question bank · Pass mark {PASS_THRESHOLD * 100}% · Timed</p>
+                    <p className="text-sm text-muted-foreground">Full question bank · Pass mark {Math.round(examConfig.exam_pass_threshold * 100)}%{examConfig.exam_time_limit_enabled ? ` · ${examConfig.exam_time_per_question_seconds}s per question` : ' · Untimed'}</p>
                 </div>
 
                 {!banksLoaded ? (
@@ -141,7 +171,9 @@ export function TheoryExam() {
                         </div>
                         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
                             <p className="font-semibold mb-1">⏱ Exam Conditions</p>
-                            <p>All questions must be answered. You need <strong>{PASS_THRESHOLD * 100}%</strong> or above to pass.</p>
+                            <p>All questions must be answered. You need <strong>{Math.round(examConfig.exam_pass_threshold * 100)}%</strong> or above to pass.
+                                {examConfig.exam_time_limit_enabled && ` Time limit: ${examConfig.exam_time_per_question_seconds}s per question.`}
+                            </p>
                         </div>
                         <button
                             onClick={startExam}
@@ -171,7 +203,14 @@ export function TheoryExam() {
                             <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                         </div>
                     </div>
-                    <div className="text-sm font-mono font-bold text-muted-foreground shrink-0">{formatTime(elapsed)}</div>
+                    <div className="text-sm font-mono font-bold shrink-0">
+                        <span className={examConfig.exam_time_limit_enabled && questions.length > 0 && elapsed >= questions.length * examConfig.exam_time_per_question_seconds * 0.9 ? 'text-red-500' : 'text-muted-foreground'}>
+                            {formatTime(elapsed)}
+                        </span>
+                        {examConfig.exam_time_limit_enabled && questions.length > 0 && (
+                            <span className="text-xs text-muted-foreground ml-1">/ {formatTime(questions.length * examConfig.exam_time_per_question_seconds)}</span>
+                        )}
+                    </div>
                 </div>
 
                 <div className="bg-card border rounded-2xl p-6 shadow-sm min-h-[100px] flex flex-col justify-center">
@@ -220,7 +259,7 @@ export function TheoryExam() {
                 <div className={`text-5xl font-black ${resultColor}`}>{score}<span className="text-2xl font-semibold">/{questions.length}</span></div>
                 <div className={`text-lg font-bold mt-1 ${resultColor}`}>{Math.round(percentage * 100)}% — {passed ? '🎉 PASS' : '❌ FAIL'}</div>
                 <p className="text-sm text-muted-foreground mt-2">Time taken: {formatTime(elapsed)}</p>
-                {!passed && <p className={`text-sm mt-2 font-medium ${resultColor}`}>You need {Math.ceil(questions.length * PASS_THRESHOLD)} correct to pass.</p>}
+                {!passed && <p className={`text-sm mt-2 font-medium ${resultColor}`}>You need {Math.ceil(questions.length * examConfig.exam_pass_threshold)} correct to pass.</p>}
             </div>
 
             <div className="flex justify-between items-center">
