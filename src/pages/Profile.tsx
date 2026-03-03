@@ -369,24 +369,7 @@ const Profile = () => {
                             {!isEditing ? (
                                 <div className="py-2 space-y-6">
                                     <MembershipCard profile={profile} />
-                                    <div className="grid gap-4 md:grid-cols-2 text-sm border-t pt-4">
-                                        <div>
-                                            <span className="text-muted-foreground mr-2 font-medium">Email:</span>
-                                            {profile.email}
-                                        </div>
-                                        <div>
-                                            <span className="text-muted-foreground mr-2 font-medium">Mobile:</span>
-                                            {profile.mobile || "Not provided"}
-                                        </div>
-                                        <div>
-                                            <span className="text-muted-foreground mr-2 font-medium">Date of Birth:</span>
-                                            {profile.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : "Not provided"}
-                                        </div>
-                                        <div>
-                                            <span className="text-muted-foreground mr-2 font-medium">Gender:</span>
-                                            {profile.gender || "Other"}
-                                        </div>
-                                    </div>
+
                                     {profile.remarks && (
                                         <div className="text-sm pt-2">
                                             <span className="text-muted-foreground font-medium block mb-1">Remarks:</span>
