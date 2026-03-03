@@ -102,8 +102,8 @@ export default async function handler(request: Request) {
             // Create a new bank if requested
             if (new_bank_name && discipline) {
                 const bRes = await db.execute(sql`
-                    INSERT INTO referee_question_banks (name, discipline, exam_type, created_by, is_active)
-                    VALUES (${new_bank_name}, ${discipline}::karate_discipline, 'referee', ${payload.sub}, true)
+                    INSERT INTO referee_question_banks (name, discipline, exam_type, is_active, version)
+                    VALUES (${new_bank_name}, ${discipline}::karate_discipline, 'referee', true, TO_CHAR(NOW(), 'YYYY-MM-DD'))
                     RETURNING id
                 `);
                 targetBankId = bRes.rows[0].id;

@@ -177,8 +177,15 @@ export default function RefereeQuestionsAdmin() {
             setImportJson('');
             fetchBanks(); // refresh counts
         } else {
-            const err = await res.json();
-            toast({ title: 'Import Failed', description: err.error || 'Unknown error occurred.', variant: 'destructive' });
+            let errText = 'Unknown error occurred.';
+            try {
+                const err = await res.json();
+                errText = err.error || errText;
+            } catch (e) {
+                // If it's a 500 HTML page from Vercel, it'll fail JSON parsing
+                errText = `Server error: ${res.status} ${res.statusText}`;
+            }
+            toast({ title: 'Import Failed', description: errText, variant: 'destructive' });
         }
     }
 
