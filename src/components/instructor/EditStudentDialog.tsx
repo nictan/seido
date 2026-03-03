@@ -110,74 +110,60 @@ export function EditStudentDialog({ student, open, onOpenChange, onSuccess }: Ed
                         Update details for {student.firstName} {student.lastName}.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="email" className="text-right">
-                            Email
-                        </Label>
+                <div className="flex flex-col gap-4 py-4">
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="email">Email</Label>
                         <Input
                             id="email"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            className="col-span-3"
                         />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="mobile" className="text-right">
-                            Mobile
-                        </Label>
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="mobile">Mobile</Label>
                         <Input
                             id="mobile"
                             value={formData.mobile}
                             onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                            className="col-span-3"
                         />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="dojo" className="text-right">
-                            Dojo
-                        </Label>
-                        <div className="col-span-3">
-                            <Select
-                                value={formData.dojo}
-                                onValueChange={(v) => setFormData({ ...formData, dojo: v })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select Dojo" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="HQ">HQ</SelectItem>
-                                    <SelectItem value="TP">TP</SelectItem>
-                                    <SelectItem value="SIT">SIT</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="dojo">Dojo</Label>
+                        <Select
+                            value={formData.dojo}
+                            onValueChange={(v) => setFormData({ ...formData, dojo: v })}
+                        >
+                            <SelectTrigger id="dojo">
+                                <SelectValue placeholder="Select Dojo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="HQ">HQ</SelectItem>
+                                <SelectItem value="TP">TP</SelectItem>
+                                <SelectItem value="SIT">SIT</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="rank" className="text-right">
-                            Rank
-                        </Label>
-                        <div className="col-span-3">
-                            <Select
-                                value={formData.rankName}
-                                onValueChange={(v) => setFormData({ ...formData, rankName: v })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select Rank" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[200px]">
-                                    {ranks.map((r) => (
-                                        <SelectItem key={r.id} value={r.displayName}>
-                                            {r.displayName}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="rank">Rank</Label>
+                        <Select
+                            value={formData.rankName}
+                            onValueChange={(v) => setFormData({ ...formData, rankName: v })}
+                        >
+                            <SelectTrigger id="rank">
+                                <SelectValue placeholder="Select Rank" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[200px]">
+                                {ranks.map((r) => (
+                                    <SelectItem key={r.id} value={r.displayName}>
+                                        {r.displayName}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
-                    <div className="text-xs text-muted-foreground ml-auto col-span-4 mt-2">
+                    <p className="text-xs text-muted-foreground mt-1">
                         Updating email will update their login. Updating rank creates a new history entry.
-                    </div>
+                    </p>
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
