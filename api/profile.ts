@@ -211,11 +211,20 @@ export default async function handler(request: Request) {
                     }
                 }
 
-                const existingRank = await db.query.rankHistories.findFirst({
-                    where: (rh, { eq }) => eq(rh.profileId, newProfile.id)
+                // First, clean up any stale is_current=false duplicates that may have survived
+                // from a previous account linked to this email (onConflictDoUpdate re-links the same profile row
+                // but auth-user deletion doesn't cascade to rank_histories via profiles).
+                await db.execute(sql`
+                    DELETE FROM rank_histories
+                    WHERE profile_id = ${newProfile.id}
+                    AND is_current = false
+                `);
+
+                const existingCurrentRank = await db.query.rankHistories.findFirst({
+                    where: (rh, { and, eq }) => and(eq(rh.profileId, newProfile.id), eq(rh.isCurrent, true))
                 });
 
-                if (!existingRank) {
+                if (!existingCurrentRank) {
                     await db.insert(rankHistories).values({
                         profileId: newProfile.id,
                         rankId: defaultRankId,
