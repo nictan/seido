@@ -13,7 +13,7 @@ import { MyGrading } from "./pages/MyGrading";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import RankManagement from "./pages/RankManagement";
-import { AuthGuard } from "./components/auth/AuthGuard";
+import { AuthGuard, FeatureGuard } from "./components/auth/AuthGuard";
 
 const queryClient = new QueryClient();
 
@@ -24,7 +24,7 @@ const App = () => (
                 <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
-                    <Route path="/grading" element={<AuthGuard><MyGrading /></AuthGuard>} />
+                    <Route path="/grading" element={<AuthGuard><FeatureGuard feature="grading"><MyGrading /></FeatureGuard></AuthGuard>} />
                     <Route path="/instructor" element={<AuthGuard><InstructorDashboard /></AuthGuard>} />
                     <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} />
                     <Route path="/admin/ranks" element={<AuthGuard><RankManagement /></AuthGuard>} />
