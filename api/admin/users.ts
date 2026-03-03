@@ -34,9 +34,15 @@ export default async function handler(request: Request) {
                     p.is_admin as "isAdmin",
                     p.is_instructor as "isInstructor",
                     p.is_student as "isStudent",
-                    kp.dojo
+                    kp.dojo,
+                    COALESCE(
+                        json_object_agg(uf.feature, uf.enabled) FILTER (WHERE uf.feature IS NOT NULL),
+                        '{}'
+                    ) as features
                 FROM profiles p
                 LEFT JOIN karate_profiles kp ON kp.profile_id = p.id
+                LEFT JOIN user_features uf ON uf.profile_id = p.id
+                GROUP BY p.id, kp.dojo
                 ORDER BY p.first_name ASC
             `);
 
