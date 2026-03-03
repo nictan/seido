@@ -39,8 +39,6 @@ export default function RefereeQuestionsAdmin() {
     const navigate = useNavigate();
 
     const [banks, setBanks] = useState<Bank[]>([]);
-    const [questions, setQuestions] = useState<Question[]>([]);
-    const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
     const [expandedBank, setExpandedBank] = useState<string | null>(null);
     const [bankQuestions, setBankQuestions] = useState<Record<string, Question[]>>({});
     const [loading, setLoading] = useState(true);
