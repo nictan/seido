@@ -262,8 +262,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.error || "Failed to create profile" };
+        let errorMessage = "Failed to create profile";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If server returns HTML or plain text (e.g. 500 Edge error)
+          errorMessage = `Server Error: ${response.status} ${response.statusText}`;
+        }
+        return { error: errorMessage };
       }
 
       await refreshProfile();
@@ -293,8 +300,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.error || "Failed to update profile" };
+        let errorMessage = "Failed to update profile";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = `Server Error: ${response.status} ${response.statusText}`;
+        }
+        return { error: errorMessage };
       }
 
       await refreshProfile();
