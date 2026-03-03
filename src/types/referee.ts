@@ -94,3 +94,21 @@ export const DISCIPLINE_LABELS: Record<KarateDiscipline, string> = {
   kumite: 'Kumite',
   kata: 'Kata',
 };
+
+// ─── Quiz / Exam types ───────────────────────────────────────────────────────
+
+export type QuizQuestion = {
+  id: number;
+  question: string;
+  answer: boolean;       // true = TRUE, false = FALSE
+  rationale: string;
+  category: KarateDiscipline;
+};
+
+export type QuizResult = {
+  question: QuizQuestion;
+  userAnswer: boolean | null;
+  isCorrect: boolean;
+};
+
+export type QuizCategory = KarateDiscipline | 'mixed';
