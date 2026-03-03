@@ -226,9 +226,10 @@ export default async function handler(request: Request) {
                 });
             } catch (error: any) {
                 console.error('API: Profile POST - Transaction failed:', error);
+                const errorStr = typeof error === 'object' ? JSON.stringify(error, Object.getOwnPropertyNames(error)) : String(error);
                 return new Response(JSON.stringify({
                     error: 'Database transaction failed',
-                    message: error.message,
+                    message: errorStr,
                     code: error.code,
                     detail: error.detail
                 }), {
@@ -238,9 +239,10 @@ export default async function handler(request: Request) {
             }
         } catch (error: any) {
             console.error('API: Profile POST - Outer error:', error);
+            const errorStr = typeof error === 'object' ? JSON.stringify(error, Object.getOwnPropertyNames(error)) : String(error);
             return new Response(JSON.stringify({
                 error: 'Internal server error',
-                message: error.message
+                message: errorStr
             }), {
                 status: 500,
                 headers: { 'Content-Type': 'application/json' }
