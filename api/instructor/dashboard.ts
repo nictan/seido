@@ -25,24 +25,7 @@ export default async function handler(request: Request) {
             with: { karateProfile: true }
         });
 
-        if (!requesterProfile?.isInstructor && !requesterProfile?.isStudent === false) {
-            // Logic check: if not instructor. Using isStudent=false as proxy for potential instructor if field missing, 
-            // but schema says isInstructor available? Let's check schema.
-            // Actually, plan says "Assuming 'Instructor' privileges are determined by profile.karate_profile.is_instructor"
-            // Let's assume schema has it or we use 'isStudent' false + some other check?
-            // Re-reading schema... I don't recall seeing isInstructor explicit in previous schema dumps, 
-            // but 'karateProfiles' had 'isStudent'.
-            // Let's rely on 'isInstructor' being a boolean property of karateProfiles if it exists, or implied.
-            // Wait, looking at previous file edits... 
-            // Schema: `isStudent: boolean("is_student").default(true)`
-            // I will add `isInstructor` to schema if it's missing or use a derived query.
-            // For now, let's assume we need to implement it or use a fallback.
-            // Better: Assume any non-student or specific user is instructor. 
-            // Actually, I'll modify schema to be sure in parallel if needed, but for now let's use the explicit check 
-            // that matches the one in 'profile.ts' -> "const isRequesterAdmin = requesterFullProfile?.karateProfile?.isInstructor || false;"
-        }
-
-        // Re-using logic from profile.ts
+        // isInstructor lives on the profiles table (src/db/schema.ts)
         const isInstructor = requesterProfile?.isInstructor || false;
 
         if (!isInstructor) {
