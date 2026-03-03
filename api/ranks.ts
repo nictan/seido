@@ -3,6 +3,9 @@ import { ranks } from '../src/db/schema.js';
 import { asc, eq, sql } from 'drizzle-orm';
 import { verifyAuth } from './_auth.js';
 
+export const config = {
+    runtime: 'edge',
+};
 
 export default async function handler(request: Request) {
     // 1. GET - Public Access

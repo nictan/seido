@@ -4,6 +4,9 @@ import { verifyAuth } from '../_auth.js';
 import { sql } from 'drizzle-orm';
 import { hashPassword } from 'better-auth/crypto';
 
+export const config = {
+    runtime: 'edge',
+};
 
 export default async function handler(request: Request) {
     if (request.method === 'POST') {

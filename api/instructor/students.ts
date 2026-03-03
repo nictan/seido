@@ -3,6 +3,9 @@ import { profiles, karateProfiles, rankHistories, ranks } from '../../src/db/sch
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { verifyAuth } from '../_auth.js';
 
+export const config = {
+    runtime: 'edge',
+};
 
 export default async function handler(request: Request) {
     const payload = await verifyAuth(request);

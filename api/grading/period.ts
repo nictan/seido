@@ -3,6 +3,9 @@ import { gradingPeriods, gradingPeriodRanks, profiles } from '../../src/db/schem
 import { eq, desc, and, or } from 'drizzle-orm';
 import { verifyAuth } from '../_auth.js';
 
+export const config = {
+    runtime: 'edge',
+};
 
 export default async function handler(request: Request) {
     if (request.method === 'GET') {

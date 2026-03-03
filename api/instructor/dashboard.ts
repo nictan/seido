@@ -3,6 +3,9 @@ import { profiles, karateProfiles, gradingApplications, gradingPeriods } from '.
 import { eq, sql } from 'drizzle-orm';
 import { verifyAuth } from '../_auth.js';
 
+export const config = {
+    runtime: 'edge',
+};
 
 export default async function handler(request: Request) {
     if (request.method !== 'GET') {
