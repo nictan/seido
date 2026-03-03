@@ -1,10 +1,9 @@
-import { Award, Hash } from "lucide-react";
+import { Award, Hash, Mail, Phone, Calendar, User as UserIcon } from "lucide-react";
 
 import { DOJOS } from "@/types/database";
 import HayashiLogo from "@/assets/hayashiha-Logo2.jpg";
 
 export const MembershipCard = ({ profile }: { profile: any }) => {
-
 
     const getRankColor = (rank: string) => {
         if (!rank) return "text-white";
@@ -26,10 +25,15 @@ export const MembershipCard = ({ profile }: { profile: any }) => {
         });
     };
 
+    const dojoKey = profile.karate_profile?.dojo as keyof typeof DOJOS;
+    const dojoLabel = dojoKey ? DOJOS[dojoKey] : null;
+
+    const currentRank = profile.rank_histories?.find((h: any) => h.isCurrent) || profile.rank_histories?.[0];
+
     return (
-        <div className="relative w-full max-w-[600px] mx-auto aspect-[1.586] perspective-1000 group">
+        <div className="relative w-full max-w-[600px] mx-auto perspective-1000 group">
             {/* Front of Card */}
-            <div className="absolute inset-0 w-full h-full transition-all duration-700 bg-[#1a1a1a] rounded-xl shadow-2xl overflow-hidden border border-white/10">
+            <div className="relative w-full bg-[#1a1a1a] rounded-xl shadow-2xl overflow-hidden border border-white/10">
                 {/* Background Texture */}
                 <div className="absolute inset-0 opacity-20" style={{
                     backgroundImage: `radial-gradient(circle at 50% 50%, #333 1px, transparent 1px)`,
@@ -41,7 +45,7 @@ export const MembershipCard = ({ profile }: { profile: any }) => {
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-500/5 rounded-full blur-3xl -ml-32 -mb-32"></div>
 
                 {/* Content Container */}
-                <div className="relative h-full p-8 flex flex-col justify-between">
+                <div className="relative p-8 flex flex-col gap-5">
 
                     {/* Header */}
                     <div className="flex justify-between items-start">
@@ -51,7 +55,11 @@ export const MembershipCard = ({ profile }: { profile: any }) => {
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-white tracking-wider">HAYASHI-HA KARATE SG</h2>
-                                <p className="text-xs text-white/50 uppercase tracking-[0.2em]">{profile.karate_profile ? DOJOS[profile.karate_profile.dojo as keyof typeof DOJOS] : 'MEMBERSHIP'}</p>
+                                {dojoLabel && (
+                                    <p className="text-xs text-white/50 uppercase tracking-[0.2em]">
+                                        <span className="text-white/30">Dojo: </span>{dojoLabel}
+                                    </p>
+                                )}
                             </div>
                         </div>
                         <div className="text-right">
@@ -63,42 +71,73 @@ export const MembershipCard = ({ profile }: { profile: any }) => {
                         </div>
                     </div>
 
-                    {/* Main Info */}
-                    <div className="flex justify-between items-end mb-4">
-                        <div className="space-y-4">
-                            <div>
-                                <p className="text-xs text-white/40 uppercase tracking-widest mb-1">Name</p>
-                                <h1 className="text-3xl font-bold text-white tracking-wide">
-                                    {profile.first_name} <span className="text-yellow-500">{profile.last_name}</span>
-                                </h1>
+                    {/* Name & Rank Row */}
+                    <div className="flex justify-between items-end">
+                        <div className="space-y-1">
+                            <p className="text-xs text-white/40 uppercase tracking-widest">Name</p>
+                            <h1 className="text-3xl font-bold text-white tracking-wide">
+                                {profile.first_name} <span className="text-yellow-500">{profile.last_name}</span>
+                            </h1>
+                        </div>
+                        <div className="text-right space-y-1">
+                            <p className="text-xs text-white/40 uppercase tracking-widest">Current Rank</p>
+                            <div className={`flex items-center gap-2 font-bold justify-end ${getRankColor(currentRank?.rank?.displayName)}`}>
+                                <Award className="w-4 h-4" />
+                                {currentRank?.rank?.displayName || 'White Belt'}
                             </div>
-
-                            <div className="flex gap-8">
-                                <div>
-                                    <p className="text-xs text-white/40 uppercase tracking-widest mb-1">Current Rank</p>
-                                    <div className={`flex items-center gap-2 font-bold ${getRankColor(profile.rank_histories?.find((h: any) => h.isCurrent)?.rank?.displayName || profile.rank_histories?.[0]?.rank?.displayName)}`}>
-                                        <Award className="w-4 h-4" />
-                                        {profile.rank_histories?.find((h: any) => h.isCurrent)?.rank?.displayName || profile.rank_histories?.[0]?.rank?.displayName || 'White Belt'}
-                                    </div>
-                                    <p className="text-xs text-white/30 mt-1">
-                                        Since {formatDate(profile.rank_histories?.find((h: any) => h.isCurrent)?.effectiveDate || profile.rank_histories?.[0]?.effectiveDate)}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-white/40 uppercase tracking-widest mb-1">ID Number</p>
-                                    <div className="flex items-center gap-2 text-white font-mono">
-                                        <Hash className="w-4 h-4 text-white/30" />
-                                        {profile.id.slice(-8).toUpperCase()}
-                                    </div>
-                                </div>
-                            </div>
+                            <p className="text-xs text-white/30">
+                                Since {formatDate(currentRank?.effectiveDate)}
+                            </p>
                         </div>
                     </div>
 
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-3 pt-2 border-t border-white/10">
+                        {profile.email && (
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Mail className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-[10px] text-white/40 uppercase tracking-widest">Email</p>
+                                    <p className="text-xs text-white/80 font-mono truncate">{profile.email}</p>
+                                </div>
+                            </div>
+                        )}
+                        {profile.mobile && (
+                            <div className="flex items-center gap-2">
+                                <Phone className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
+                                <div>
+                                    <p className="text-[10px] text-white/40 uppercase tracking-widest">Mobile</p>
+                                    <p className="text-xs text-white/80 font-mono">{profile.mobile}</p>
+                                </div>
+                            </div>
+                        )}
+                        {profile.date_of_birth && (
+                            <div className="flex items-center gap-2">
+                                <Calendar className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
+                                <div>
+                                    <p className="text-[10px] text-white/40 uppercase tracking-widest">Date of Birth</p>
+                                    <p className="text-xs text-white/80 font-mono">{formatDate(profile.date_of_birth)}</p>
+                                </div>
+                            </div>
+                        )}
+                        {profile.gender && (
+                            <div className="flex items-center gap-2">
+                                <UserIcon className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
+                                <div>
+                                    <p className="text-[10px] text-white/40 uppercase tracking-widest">Gender</p>
+                                    <p className="text-xs text-white/80 font-mono">{profile.gender}</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Footer */}
-                    <div className="pt-4 border-t border-white/10 flex justify-between items-center text-xs text-white/30 font-mono">
+                    <div className="pt-3 border-t border-white/10 flex justify-between items-center text-xs text-white/30 font-mono">
                         <div>HAYASHI-HA SHITORYUKAI KARATE-DO (SINGAPORE)</div>
-                        <div>VALID THRU: 12/26</div>
+                        <div className="flex items-center gap-1.5">
+                            <Hash className="w-3 h-3 text-white/20" />
+                            <span className="tracking-widest">{profile.id?.slice(-8).toUpperCase()}</span>
+                        </div>
                     </div>
                 </div>
             </div>
