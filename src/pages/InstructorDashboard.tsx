@@ -520,7 +520,7 @@ export default function InstructorDashboard() {
                                     <div className="relative w-full md:w-1/3">
                                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                         <Input
-                                            placeholder="Search students..."
+                                            placeholder="Search by name, email or mobile..."
                                             className="pl-8"
                                             value={studentSearchQuery}
                                             onChange={(e) => setStudentSearchQuery(e.target.value)}
@@ -564,7 +564,8 @@ export default function InstructorDashboard() {
                                             const matchesSearch =
                                                 student.firstName.toLowerCase().includes(search) ||
                                                 student.lastName.toLowerCase().includes(search) ||
-                                                student.email.toLowerCase().includes(search);
+                                                student.email.toLowerCase().includes(search) ||
+                                                (student.mobile || '').toLowerCase().includes(search);
 
                                             const matchesDojo = studentDojoFilter === 'all' || student.dojo === studentDojoFilter;
 
@@ -581,7 +582,8 @@ export default function InstructorDashboard() {
                                                 const matchesSearch =
                                                     student.firstName.toLowerCase().includes(search) ||
                                                     student.lastName.toLowerCase().includes(search) ||
-                                                    student.email.toLowerCase().includes(search);
+                                                    student.email.toLowerCase().includes(search) ||
+                                                    (student.mobile || '').toLowerCase().includes(search);
 
                                                 const matchesDojo = studentDojoFilter === 'all' || student.dojo === studentDojoFilter;
 
@@ -611,7 +613,7 @@ export default function InstructorDashboard() {
                                 <div className="mt-4 text-xs text-muted-foreground text-center">
                                     Showing {students.filter(s => {
                                         const search = studentSearchQuery.toLowerCase();
-                                        const matchesSearch = s.firstName.toLowerCase().includes(search) || s.lastName.toLowerCase().includes(search) || s.email.toLowerCase().includes(search);
+                                        const matchesSearch = s.firstName.toLowerCase().includes(search) || s.lastName.toLowerCase().includes(search) || s.email.toLowerCase().includes(search) || (s.mobile || '').toLowerCase().includes(search);
                                         const matchesDojo = studentDojoFilter === 'all' || s.dojo === studentDojoFilter;
                                         return matchesSearch && matchesDojo;
                                     }).length} of {students.length} students
