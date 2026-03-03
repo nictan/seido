@@ -11,15 +11,29 @@ if (!JWKS_URL) {
 const JWKS = JWKS_URL ? createRemoteJWKSet(new URL(JWKS_URL)) : null;
 
 export async function verifyAuth(request: Request) {
+    let token = '';
+
+    // 1. Try Authorization Bearer Header
     const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        console.warn('verifyAuth: Missing or invalid Authorization header');
-        return null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const extracted = authHeader.split(' ')[1];
+        if (extracted && extracted !== 'undefined' && extracted !== 'null') {
+            token = extracted;
+        }
     }
 
-    const token = authHeader.split(' ')[1];
-    if (!token || token === 'undefined' || token === 'null') {
-        console.warn('verifyAuth: Bearer token is valid/empty');
+    // 2. Try Cookie if Bearer is missing or invalid
+    if (!token) {
+        const cookieHeader = request.headers.get('Cookie');
+        if (cookieHeader) {
+            const cookies = Object.fromEntries(cookieHeader.split('; ').map(c => c.split('=')));
+            // Try both secure and non-secure cookie names
+            token = cookies['__Secure-better-auth.session_token'] || cookies['better-auth.session_token'] || '';
+        }
+    }
+
+    if (!token) {
+        console.warn('verifyAuth: Missing valid token in Header or Cookie');
         return null;
     }
 
