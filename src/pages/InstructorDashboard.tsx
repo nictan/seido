@@ -552,6 +552,7 @@ export default function InstructorDashboard() {
                                         <TableRow>
                                             <TableHead>Name</TableHead>
                                             <TableHead>Email</TableHead>
+                                            <TableHead>Mobile</TableHead>
                                             <TableHead>Dojo</TableHead>
                                             <TableHead>Rank</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
@@ -570,7 +571,7 @@ export default function InstructorDashboard() {
                                             return matchesSearch && matchesDojo;
                                         }).length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                                <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                                                     No students found.
                                                 </TableCell>
                                             </TableRow>
@@ -589,6 +590,7 @@ export default function InstructorDashboard() {
                                                 <TableRow key={student.id}>
                                                     <TableCell className="font-medium">{student.firstName} {student.lastName}</TableCell>
                                                     <TableCell>{student.email}</TableCell>
+                                                    <TableCell className="text-muted-foreground">{student.mobile || '—'}</TableCell>
                                                     <TableCell>{student.dojo}</TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">
