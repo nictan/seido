@@ -1,6 +1,6 @@
 import { db } from './_db.js';
 import { profiles, karateProfiles, rankHistories, ranks } from '../src/db/schema.js';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { eq, desc, and, or, ilike, sql } from 'drizzle-orm';
 import { verifyAuth } from './_auth.js';
 
 export const config = {
@@ -13,6 +13,7 @@ export default async function handler(request: Request) {
     if (request.method === 'GET') {
         const payload = await verifyAuth(request);
         const userId = url.searchParams.get('userId');
+        const emailParam = url.searchParams.get('email');
 
         if (!payload) {
             return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -45,7 +46,7 @@ export default async function handler(request: Request) {
                 });
             }
 
-            const result = await db.query.profiles.findFirst({
+            let result = await db.query.profiles.findFirst({
                 where: eq(profiles.userId, userId),
                 with: {
                     karateProfile: true,
@@ -56,6 +57,32 @@ export default async function handler(request: Request) {
                     }
                 }
             });
+
+            if (!result && emailParam) {
+                // Try finding by email (auth account recreation recovery)
+                result = await db.query.profiles.findFirst({
+                    where: eq(sql`LOWER(${profiles.email})`, emailParam.toLowerCase()),
+                    with: {
+                        karateProfile: true,
+                        rankHistories: {
+                            with: { rank: true },
+                            orderBy: [desc(rankHistories.effectiveDate)],
+                            limit: 10
+                        }
+                    }
+                });
+
+                if (result) {
+                    // Auto-link new userId to recovered profile
+                    await db.execute(sql`
+                        UPDATE profiles
+                        SET user_id = ${userId}, updated_at = NOW()
+                        WHERE id = ${result.id}
+                    `);
+                    // Note: Memory state of `result` still has old user_id, but the UI doesn't strictly depend on it 
+                    // and we fetched it successfully, so we can just proceed.
+                }
+            }
 
             if (!result) {
                 return new Response(JSON.stringify({ error: 'Profile not found' }), {
@@ -187,7 +214,7 @@ export default async function handler(request: Request) {
                 if (!defaultRankId) {
                     // a. Try to find explicitly marked default rank
                     const defaultRank = await db.query.ranks.findFirst({
-                        where: (ranks, { eq }) => eq(ranks.isDefaultRank, true)
+                        where: eq(ranks.isDefaultRank, true)
                     });
 
                     if (defaultRank) {
@@ -195,7 +222,7 @@ export default async function handler(request: Request) {
                     } else {
                         // b. Fallback to finding "White Belt" by name
                         const whiteBeltRequest = await db.query.ranks.findFirst({
-                            where: (ranks, { or, ilike }) => or(ilike(ranks.displayName, 'White Belt'), ilike(ranks.displayName, '%White%'))
+                            where: or(ilike(ranks.displayName, 'White Belt'), ilike(ranks.displayName, '%White%'))
                         });
 
                         if (whiteBeltRequest) {
@@ -221,7 +248,7 @@ export default async function handler(request: Request) {
                 `);
 
                 const existingCurrentRank = await db.query.rankHistories.findFirst({
-                    where: (rh, { and, eq }) => and(eq(rh.profileId, newProfile.id), eq(rh.isCurrent, true))
+                    where: and(eq(rankHistories.profileId, newProfile.id), eq(rankHistories.isCurrent, true))
                 });
 
                 if (!existingCurrentRank) {

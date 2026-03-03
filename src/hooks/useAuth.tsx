@@ -40,14 +40,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string, token?: string) => {
+  const fetchProfile = async (userId: string, token?: string, email?: string) => {
     try {
       const headers: Record<string, string> = {};
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`/api/profile?userId=${userId}`, { headers });
+      const url = email
+        ? `/api/profile?userId=${userId}&email=${encodeURIComponent(email)}`
+        : `/api/profile?userId=${userId}`;
+
+      const response = await fetch(url, { headers });
       if (response.ok) {
         const data = await response.json();
         const mappedProfile: Profile = {
@@ -106,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           setUser(mappedUser);
           setSession({ user: mappedUser, access_token: validToken });
-          await fetchProfile(authUser.id, validToken);
+          await fetchProfile(authUser.id, validToken, authUser.email);
         }
       } catch (err) {
         console.error("Auth check failed", err);
@@ -135,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const mappedUser: User = { id: data.user.id, email: data.user.email, name: data.user.name };
         setUser(mappedUser);
         setSession({ user: mappedUser, access_token: token || "" });
-        await fetchProfile(data.user.id, token || "");
+        await fetchProfile(data.user.id, token || "", data.user.email);
       }
       return { error: null };
     } catch (error: any) {
@@ -160,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const mappedUser: User = { id: data.user.id, email: data.user.email, name: data.user.name };
         setUser(mappedUser);
         setSession({ user: mappedUser, access_token: token || "" });
-        await fetchProfile(data.user.id, token || "");
+        await fetchProfile(data.user.id, token || "", data.user.email);
       }
       return { error: null };
     } catch (error: any) {
@@ -210,7 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (user?.id) {
-      await fetchProfile(user.id, session?.access_token);
+      await fetchProfile(user.id, session?.access_token, user.email);
     }
   };
 
