@@ -77,8 +77,9 @@ export const gradingApplications = pgTable('grading_applications', {
     proposedRankId: uuid('proposed_rank_id').notNull(),
     status: applicationStatus('status').default('Submitted').notNull(),
     gradingStatus: gradingStatus('grading_status').default('Pending').notNull(),
-    gradingNotes: text('grading_notes'),
-    instructorNotes: text('instructor_notes'),
+    gradingNotes: text('grading_notes'),       // Public feedback — shown to student
+    instructorNotes: text('instructor_notes'),  // Student's own message at apply time
+    internalNotes: text('internal_notes'),      // Instructor-only internal notes
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [

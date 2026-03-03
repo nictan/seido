@@ -82,13 +82,18 @@ export default async function handler(request: Request) {
                     profile: { // Include profile for instructor view
                         with: { karateProfile: true }
                     },
-                    currentRank: true, // Keep these for all views
-                    proposedRank: true // Keep these for all views
+                    currentRank: true,
+                    proposedRank: true
                 },
                 orderBy: [desc(gradingApplications.createdAt)]
             });
 
-            return new Response(JSON.stringify(apps), {
+            // Strip internalNotes for non-instructors
+            const response = isInstructor
+                ? apps
+                : apps.map(({ internalNotes: _, ...app }) => app);
+
+            return new Response(JSON.stringify(response), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -152,7 +157,7 @@ export default async function handler(request: Request) {
 
         if (request.method === 'PUT') {
             const body = await request.json();
-            const { id, status, gradingStatus, gradingNotes } = body;
+            const { id, status, gradingStatus, gradingNotes, internalNotes } = body;
 
             // Updated valid statuses including gradingStatus updates
             const validStatuses = ['Withdrawn', 'Approved', 'Rejected'];
@@ -200,6 +205,7 @@ export default async function handler(request: Request) {
                             .set({
                                 gradingStatus: 'Pass',
                                 gradingNotes: gradingNotes || null,
+                                internalNotes: internalNotes || null,
                                 updatedAt: new Date().toISOString()
                             })
                             .where(eq(gradingApplications.id, id));
@@ -224,6 +230,7 @@ export default async function handler(request: Request) {
                             .set({
                                 gradingStatus: 'Fail',
                                 gradingNotes: gradingNotes || null,
+                                internalNotes: internalNotes || null,
                                 updatedAt: new Date().toISOString()
                             })
                             .where(eq(gradingApplications.id, id));

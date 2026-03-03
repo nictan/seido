@@ -121,8 +121,9 @@ export type GradingApplication = {
   proposedRankId: string;
   status: GradingApplicationStatus;
   gradingStatus: 'Pending' | 'Pass' | 'Fail';
-  gradingNotes?: string;
-  instructorNotes?: string;
+  gradingNotes?: string;       // Public feedback visible to student
+  instructorNotes?: string;    // Student's own message at apply time
+  internalNotes?: string;      // Instructor-only, never shown to student
   createdAt: string;
   updatedAt: string;
   gradingPeriod?: GradingPeriod;

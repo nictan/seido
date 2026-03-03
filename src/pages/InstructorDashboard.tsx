@@ -62,6 +62,7 @@ export default function InstructorDashboard() {
     const [gradingDecision, setGradingDecision] = useState<'Pass' | 'Fail'>('Pass');
 
     const [gradingNotes, setGradingNotes] = useState('');
+    const [internalNotes, setInternalNotes] = useState('');
 
     // Search & Filter State
     const [appSearchQuery, setAppSearchQuery] = useState('');
@@ -232,7 +233,8 @@ export default function InstructorDashboard() {
     const openGradingDialog = (app: GradingApplication) => {
         setSelectedGradingApp(app);
         setGradingDecision('Pass');
-        setGradingNotes((app as any).gradingNotes || ''); // Pre-fill if editing? Or just empty.
+        setGradingNotes(app.gradingNotes || '');
+        setInternalNotes(app.internalNotes || '');
         setGradingDialogOpen(true);
     };
 
@@ -249,7 +251,8 @@ export default function InstructorDashboard() {
                 body: JSON.stringify({
                     id: selectedGradingApp.id,
                     gradingStatus: gradingDecision,
-                    gradingNotes: gradingNotes
+                    gradingNotes: gradingNotes,
+                    internalNotes: internalNotes
                 })
             });
 
@@ -647,11 +650,27 @@ export default function InstructorDashboard() {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label>Notes</Label>
+                            <Label className="flex items-center gap-2">
+                                Student Feedback
+                                <span className="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Visible to student</span>
+                            </Label>
                             <Textarea
                                 value={gradingNotes}
                                 onChange={(e) => setGradingNotes(e.target.value)}
-                                placeholder="Enter exam feedback..."
+                                placeholder="e.g. Good technique on basics, work on your kata timing..."
+                                rows={3}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                Internal Notes
+                                <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Instructor only</span>
+                            </Label>
+                            <Textarea
+                                value={internalNotes}
+                                onChange={(e) => setInternalNotes(e.target.value)}
+                                placeholder="Private notes for instructors only, not shown to student..."
+                                rows={2}
                             />
                         </div>
                     </div>

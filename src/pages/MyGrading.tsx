@@ -354,6 +354,13 @@ export const MyGrading = () => {
                                         <p className="text-sm text-muted-foreground">
                                             For Rank: <span className="font-medium text-foreground">{app.proposedRank?.displayName || 'Unknown Rank'}</span>
                                         </p>
+                                        {/* Public instructor feedback — only shown if decided and feedback exists */}
+                                        {(app.gradingStatus === 'Pass' || app.gradingStatus === 'Fail') && app.gradingNotes && (
+                                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                                <p className="text-xs font-semibold text-blue-700 mb-1">💬 Instructor Feedback</p>
+                                                <p className="text-sm text-blue-900">{app.gradingNotes}</p>
+                                            </div>
+                                        )}
                                     </div>
                                     {app.status === 'Submitted' && (
                                         <button
@@ -441,13 +448,13 @@ export const MyGrading = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+                                    <label className="block text-sm font-medium mb-1">Message to Instructor (Optional)</label>
                                     <textarea
                                         className="w-full p-2 rounded-md border bg-background"
                                         value={instructorNotes}
                                         onChange={(e) => setInstructorNotes(e.target.value)}
                                         rows={3}
-                                        placeholder="Any notes for the instructor..."
+                                        placeholder="Any notes or context you'd like the instructor to know..."
                                     />
                                 </div>
                                 <div className="flex justify-end gap-3 pt-2">
