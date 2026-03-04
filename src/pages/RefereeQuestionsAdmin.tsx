@@ -12,6 +12,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
+import { RefereeDocumentsAdmin } from '../components/admin/RefereeDocumentsAdmin';
 
 type Bank = {
     id: string;
@@ -365,6 +366,9 @@ export default function RefereeQuestionsAdmin() {
                         <p className="text-muted-foreground text-sm">Manage WKF referee exam questions across Kata and Kumite</p>
                     </div>
                 </div>
+
+                {/* Referee Documents Management */}
+                <RefereeDocumentsAdmin />
 
                 {/* Quiz / Exam Configuration */}
                 <Card>

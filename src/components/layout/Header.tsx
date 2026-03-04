@@ -78,15 +78,6 @@ export function Header() {
                       <ArrowRight className="h-3 w-3" />
                     </button>
                   )}
-                  {profile.is_admin && (
-                    <Link
-                      to="/admin/ranks"
-                      className="ml-2 px-2 py-0.5 text-xs border border-muted-foreground rounded-full hover:bg-accent transition-colors"
-                      title="Manage Ranks"
-                    >
-                      Ranks
-                    </Link>
-                  )}
                 </>
               ) : (
                 <span className="font-medium text-muted-foreground">
