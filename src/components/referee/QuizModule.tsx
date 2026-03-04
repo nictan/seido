@@ -171,7 +171,10 @@ export function QuizModule() {
 
                 <div className="bg-card border rounded-2xl p-6 shadow-sm">
                     <p className="text-base font-medium leading-relaxed">{q.question_text}</p>
-                    {q.rule_reference && <p className="text-xs text-muted-foreground mt-2">Ref: {q.rule_reference}</p>}
+                    <div className="flex items-center gap-3 mt-3">
+                        {q.rule_reference && <span className="text-xs font-semibold bg-muted px-2 py-1 rounded">Rule: {q.rule_reference}</span>}
+                        <span className="text-xs text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded" title="Unique Question ID for reporting issues">Ref: {q.id.split('-')[0]}</span>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -230,10 +233,13 @@ export function QuizModule() {
                             {r.isCorrect ? <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" /> : <XCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />}
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium leading-snug">{r.question.question_text}</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Your answer: <span className={r.isCorrect ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>{r.userAnswer === null ? '—' : r.userAnswer ? 'TRUE' : 'FALSE'}</span>
-                                    {' · '}Correct: <span className="font-semibold">{r.question.correct_answer ? 'TRUE' : 'FALSE'}</span>
-                                </p>
+                                <div className="flex items-center justify-between mt-1">
+                                    <p className="text-xs text-muted-foreground">
+                                        Your answer: <span className={r.isCorrect ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>{r.userAnswer === null ? '—' : r.userAnswer ? 'TRUE' : 'FALSE'}</span>
+                                        {' · '}Correct: <span className="font-semibold">{r.question.correct_answer ? 'TRUE' : 'FALSE'}</span>
+                                    </p>
+                                    <span className="text-[10px] text-muted-foreground/60 font-mono">Ref: {r.question.id.split('-')[0]}</span>
+                                </div>
                             </div>
                             {showReview[i] ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />}
                         </button>

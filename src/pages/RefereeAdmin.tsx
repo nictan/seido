@@ -656,7 +656,8 @@ export default function RefereeAdmin() {
                                                                 <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${q.correct_answer ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                                                     {q.correct_answer ? 'TRUE' : 'FALSE'}
                                                                 </span>
-                                                                {q.rule_reference && <span className="text-xs text-muted-foreground">{q.rule_reference}</span>}
+                                                                {q.rule_reference && <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{q.rule_reference}</span>}
+                                                                <span className="text-xs text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">Ref: {q.id.split('-')[0]}</span>
                                                                 {!q.is_active && <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">Disabled</span>}
                                                             </div>
                                                             {q.explanation && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{q.explanation}</p>}
