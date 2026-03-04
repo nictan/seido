@@ -47,7 +47,7 @@ type QuizConfig = {
     active_kumite_bank_id: string | null;
 };
 
-export default function RefereeQuestionsAdmin() {
+export default function RefereeAdmin() {
     const { session, profile } = useAuth();
     const { toast } = useToast();
     const navigate = useNavigate();
@@ -362,15 +362,12 @@ export default function RefereeQuestionsAdmin() {
                         <BookOpen className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold">Referee Question Banks</h1>
-                        <p className="text-muted-foreground text-sm">Manage WKF referee exam questions across Kata and Kumite</p>
+                        <h1 className="text-2xl font-bold">Referee Settings</h1>
+                        <p className="text-muted-foreground text-sm">Manage WKF referee exam configurations, rulebooks, and question banks</p>
                     </div>
                 </div>
 
-                {/* Referee Documents Management */}
-                <RefereeDocumentsAdmin />
-
-                {/* Quiz / Exam Configuration */}
+                {/* 1. Quiz / Exam Configuration */}
                 <Card>
                     <CardHeader className="pb-3">
                         <div className="flex items-center gap-2">
@@ -507,6 +504,10 @@ export default function RefereeQuestionsAdmin() {
                     </CardContent>
                 </Card>
 
+                {/* 2. Referee Documents Management */}
+                <RefereeDocumentsAdmin />
+
+                {/* 3. Bulk Import JSON */}
                 <Card>
                     <CardHeader className="pb-3 border-b border-border/50 mb-4 bg-muted/10 rounded-t-xl">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

@@ -251,11 +251,11 @@ export default function AdminDashboard() {
                             Ranks
                         </a>
                         <a
-                            href="/admin/referee-questions"
+                            href="/admin/referee"
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium bg-card hover:bg-muted transition-colors"
                         >
                             <BookOpen className="h-3.5 w-3.5" />
-                            Referee Questions
+                            Referee Settings
                         </a>
                     </div>
                 </div>

@@ -15,7 +15,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import RankManagement from "./pages/RankManagement";
 import { AuthGuard, FeatureGuard } from "./components/auth/AuthGuard";
 import RefereePrepHub from "./pages/RefereePrepHub";
-import RefereeQuestionsAdmin from "./pages/RefereeQuestionsAdmin";
+import RefereeAdmin from "./pages/RefereeAdmin";
 
 const queryClient = new QueryClient();
 
@@ -30,7 +30,7 @@ const App = () => (
                     <Route path="/instructor" element={<AuthGuard><InstructorDashboard /></AuthGuard>} />
                     <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} />
                     <Route path="/admin/ranks" element={<AuthGuard><RankManagement /></AuthGuard>} />
-                    <Route path="/admin/referee-questions" element={<AuthGuard><RefereeQuestionsAdmin /></AuthGuard>} />
+                    <Route path="/admin/referee" element={<AuthGuard><RefereeAdmin /></AuthGuard>} />
                     <Route path="/referee" element={<AuthGuard><FeatureGuard feature="referee_prep"><RefereePrepHub /></FeatureGuard></AuthGuard>} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
