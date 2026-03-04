@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Header } from '../components/layout/Header';
-import { FileText, Bot, HelpCircle, ClipboardCheck } from 'lucide-react';
+import { FileText, Bot, HelpCircle, ClipboardCheck, ExternalLink } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { QuizModule } from '../components/referee/QuizModule';
 import { TheoryExam } from '../components/referee/TheoryExam';
 
 type Tab = 'documents' | 'buddy' | 'quiz' | 'exam';
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode; available: boolean }[] = [
-    { id: 'documents', label: 'Official Documents', icon: <FileText className="h-4 w-4" />, available: false },
+    { id: 'documents', label: 'Official Documents', icon: <FileText className="h-4 w-4" />, available: true },
     { id: 'buddy', label: 'Study Buddy', icon: <Bot className="h-4 w-4" />, available: false },
     { id: 'quiz', label: 'Quiz', icon: <HelpCircle className="h-4 w-4" />, available: true },
     { id: 'exam', label: 'Theory Exam', icon: <ClipboardCheck className="h-4 w-4" />, available: true },
@@ -69,13 +70,35 @@ export default function RefereePrepHub() {
                     ))}
                 </div>
 
-                {/* Tab Content */}
                 {activeTab === 'documents' && (
-                    <PlaceholderPanel
-                        icon={<FileText className="h-6 w-6" />}
-                        title="Official WKF Documents"
-                        description="WKF Competition Rules, Referee Guidelines, and official documentation will be available here."
-                    />
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <a href="https://www.wkf.net/files/pdf/documents/WKF%202026%20Kumite%20Competition%20Rules%20MASTER%20COPY_V11.pdf" target="_blank" rel="noopener noreferrer" className="block">
+                            <Card className="hover:border-primary/50 transition-colors h-full cursor-pointer">
+                                <CardHeader>
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className="space-y-1">
+                                            <CardTitle className="text-lg">WKF Kumite Rules (2026)</CardTitle>
+                                            <CardDescription>Competition Rules Master Copy V11</CardDescription>
+                                        </div>
+                                        <ExternalLink className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                    </div>
+                                </CardHeader>
+                            </Card>
+                        </a>
+                        <a href="https://www.wkf.net/files/pdf/documents/WKF%20Kata%20Competition%20Rules%202026%20MASTER%20COPY_V2.pdf" target="_blank" rel="noopener noreferrer" className="block">
+                            <Card className="hover:border-primary/50 transition-colors h-full cursor-pointer">
+                                <CardHeader>
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className="space-y-1">
+                                            <CardTitle className="text-lg">WKF Kata Rules (2026)</CardTitle>
+                                            <CardDescription>Competition Rules Master Copy V2</CardDescription>
+                                        </div>
+                                        <ExternalLink className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                    </div>
+                                </CardHeader>
+                            </Card>
+                        </a>
+                    </div>
                 )}
                 {activeTab === 'buddy' && (
                     <PlaceholderPanel
