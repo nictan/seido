@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, RefreshCw, Shield, GraduationCap, Building2, Trash2, Search, Filter, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AdminResetPasswordDialog } from "@/components/admin/AdminResetPasswordDialog";
+import { RefereeDocumentsAdmin } from "@/components/admin/RefereeDocumentsAdmin";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 
@@ -413,6 +414,9 @@ export default function AdminDashboard() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Referee Documents Management */}
+                <RefereeDocumentsAdmin />
 
                 {/* Site Configuration */}
                 <Card>

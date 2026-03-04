@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../components/layout/Header';
-import { FileText, Bot, HelpCircle, ClipboardCheck, ExternalLink } from 'lucide-react';
+import { FileText, Bot, HelpCircle, ClipboardCheck, ExternalLink, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { QuizModule } from '../components/referee/QuizModule';
 import { TheoryExam } from '../components/referee/TheoryExam';
@@ -31,8 +31,40 @@ function PlaceholderPanel({ icon, title, description }: { icon: React.ReactNode;
     );
 }
 
+type RuleDocument = {
+    id: string;
+    title: string;
+    category: string;
+    description: string | null;
+    fileUrl: string | null;
+    version: string | null;
+};
+
 export default function RefereePrepHub() {
     const [activeTab, setActiveTab] = useState<Tab>('quiz');
+    const [documents, setDocuments] = useState<RuleDocument[]>([]);
+    const [loadingDocs, setLoadingDocs] = useState(false);
+
+    useEffect(() => {
+        if (activeTab === 'documents' && documents.length === 0) {
+            fetchDocuments();
+        }
+    }, [activeTab]);
+
+    async function fetchDocuments() {
+        setLoadingDocs(true);
+        try {
+            const res = await fetch('/api/referee/documents');
+            if (res.ok) {
+                const data = await res.json();
+                setDocuments(data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch documents:', error);
+        } finally {
+            setLoadingDocs(false);
+        }
+    }
 
     return (
         <div className="min-h-screen bg-background">
@@ -72,32 +104,51 @@ export default function RefereePrepHub() {
 
                 {activeTab === 'documents' && (
                     <div className="grid gap-4 md:grid-cols-2">
-                        <a href="https://www.wkf.net/files/pdf/documents/WKF%202026%20Kumite%20Competition%20Rules%20MASTER%20COPY_V11.pdf" target="_blank" rel="noopener noreferrer" className="block">
-                            <Card className="hover:border-primary/50 transition-colors h-full cursor-pointer">
-                                <CardHeader>
-                                    <div className="flex justify-between items-start gap-4">
-                                        <div className="space-y-1">
-                                            <CardTitle className="text-lg">WKF Kumite Rules (2026)</CardTitle>
-                                            <CardDescription>Competition Rules Master Copy V11</CardDescription>
-                                        </div>
-                                        <ExternalLink className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                    </div>
-                                </CardHeader>
-                            </Card>
-                        </a>
-                        <a href="https://www.wkf.net/files/pdf/documents/WKF%20Kata%20Competition%20Rules%202026%20MASTER%20COPY_V2.pdf" target="_blank" rel="noopener noreferrer" className="block">
-                            <Card className="hover:border-primary/50 transition-colors h-full cursor-pointer">
-                                <CardHeader>
-                                    <div className="flex justify-between items-start gap-4">
-                                        <div className="space-y-1">
-                                            <CardTitle className="text-lg">WKF Kata Rules (2026)</CardTitle>
-                                            <CardDescription>Competition Rules Master Copy V2</CardDescription>
-                                        </div>
-                                        <ExternalLink className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                    </div>
-                                </CardHeader>
-                            </Card>
-                        </a>
+                        {loadingDocs ? (
+                            <div className="md:col-span-2 py-12 flex justify-center">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : documents.length === 0 ? (
+                            <div className="md:col-span-2 py-12 text-center border rounded-lg bg-muted/20">
+                                <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-50" />
+                                <h3 className="font-semibold text-lg">No Documents Available</h3>
+                                <p className="text-muted-foreground text-sm mt-1">Official rulebooks will appear here once configured.</p>
+                            </div>
+                        ) : (
+                            documents.map(doc => (
+                                <a
+                                    key={doc.id}
+                                    href={doc.fileUrl || '#'}
+                                    target={doc.fileUrl ? "_blank" : undefined}
+                                    rel={doc.fileUrl ? "noopener noreferrer" : undefined}
+                                    className="block"
+                                >
+                                    <Card className="hover:border-primary/50 transition-colors h-full flex flex-col cursor-pointer">
+                                        <CardHeader>
+                                            <div className="flex justify-between items-start gap-4 mb-2">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <CardTitle className="text-lg">{doc.title}</CardTitle>
+                                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-primary/10 text-primary uppercase tracking-wider">
+                                                            {doc.category.replace('_', ' ')}
+                                                        </span>
+                                                    </div>
+                                                    {doc.version && (
+                                                        <div className="text-xs text-muted-foreground font-medium">Version: {doc.version}</div>
+                                                    )}
+                                                </div>
+                                                <ExternalLink className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-1" />
+                                            </div>
+                                            {doc.description && (
+                                                <CardDescription className="text-sm line-clamp-2">
+                                                    {doc.description}
+                                                </CardDescription>
+                                            )}
+                                        </CardHeader>
+                                    </Card>
+                                </a>
+                            ))
+                        )}
                     </div>
                 )}
                 {activeTab === 'buddy' && (
