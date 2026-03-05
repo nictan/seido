@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { CheckCircle, XCircle, ChevronDown, ChevronUp, RotateCcw, ClipboardCheck, Loader2, BookOpen } from 'lucide-react';
+import { CheckCircle, XCircle, ChevronDown, ChevronUp, RotateCcw, ClipboardCheck, Loader2 } from 'lucide-react';
 
 type DBQuestion = {
     id: string;
@@ -299,12 +299,9 @@ export function TheoryExam() {
 
                 <div className="bg-card border rounded-2xl p-6 shadow-sm min-h-[100px] flex flex-col justify-center">
                     <p className="text-base font-medium leading-relaxed">{q.question_text}</p>
-                    {q.rule_reference && (
-                        <div className="mt-4 pt-4 border-t border-border/50 text-xs text-muted-foreground flex items-center gap-2">
-                            <BookOpen className="h-3.5 w-3.5" />
-                            <span>Ref: {q.rule_reference}</span>
-                        </div>
-                    )}
+                    <div className="mt-4 pt-4 border-t border-border/50 text-xs text-muted-foreground flex items-center gap-2">
+                        <span className="font-mono opacity-50">Ref: {q.id.split('-')[0]}</span>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
