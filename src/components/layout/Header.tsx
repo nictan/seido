@@ -95,11 +95,6 @@ export function Header() {
                     Grading
                   </Link>
                 )}
-                {profile?.is_instructor && (
-                  <Link to="/instructor" className="text-sm font-medium transition-colors hover:text-primary text-blue-600">
-                    Instructor
-                  </Link>
-                )}
               </>
             )}
             <Button variant="outline" size="sm" onClick={handleSignOut}>
