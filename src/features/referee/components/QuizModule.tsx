@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../hooks/useAuth';
-import { CheckCircle, XCircle, ChevronDown, ChevronUp, RotateCcw, Trophy, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { CheckCircle, XCircle, ChevronDown, ChevronUp, RotateCcw, Trophy, Loader2, BookOpen } from 'lucide-react';
 
 type DBQuestion = {
     id: string;
@@ -22,7 +22,7 @@ type QuizConfig = {
     quiz_question_count: number;
 };
 
-type QuizCategory = 'kata' | 'kumite' | 'mixed';
+type QuizCategory = 'kata' | 'kumite';
 type Phase = 'select' | 'quiz' | 'results';
 
 function shuffle<T>(arr: T[]): T[] {
@@ -65,7 +65,7 @@ export function QuizModule() {
             return res.ok ? (await res.json() as DBQuestion[]) : [];
         };
         Promise.all([fetchBank('kata'), fetchBank('kumite')]).then(([kata, kumite]) => {
-            setAllQuestions({ kata, kumite, mixed: [...kata, ...kumite] });
+            setAllQuestions({ kata, kumite });
         });
     }, [session?.access_token]);
 
@@ -84,14 +84,49 @@ export function QuizModule() {
         setSelectedAnswer(answer);
     }
 
-    function handleNext() {
+    async function handleNext() {
         const newAnswers = [...answers];
         newAnswers[currentIndex] = selectedAnswer;
         setAnswers(newAnswers);
+
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(prev => prev + 1);
             setSelectedAnswer(null);
         } else {
+            // Save history
+            try {
+                const finalResults = questions.map((q, i) => ({
+                    question: q,
+                    userAnswer: newAnswers[i] ?? null,
+                    isCorrect: newAnswers[i] === q.correct_answer,
+                }));
+                const finalScore = finalResults.filter(r => r.isCorrect).length;
+
+                await fetch('/api/referee/history', {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${session?.access_token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: 'quiz',
+                        category,
+                        score: finalScore,
+                        total_questions: questions.length,
+                        passed: finalScore >= Math.ceil(quizConfig.quiz_question_count * 0.8),
+                        details: finalResults.map(r => ({
+                            question_id: r.question.id,
+                            question_text: r.question.question_text,
+                            user_answer: r.userAnswer,
+                            correct_answer: r.question.correct_answer,
+                            rule_reference: r.question.rule_reference
+                        }))
+                    })
+                });
+            } catch (err) {
+                console.error("Failed to save history", err);
+            }
+
             setPhase('results');
         }
     }
@@ -128,8 +163,7 @@ export function QuizModule() {
                         <div className="space-y-3">
                             {([
                                 { id: 'kata', label: '🥋 Kata', desc: `${allQuestions.kata?.length || 0} questions in bank` },
-                                { id: 'kumite', label: '🥊 Kumite', desc: `${allQuestions.kumite?.length || 0} questions in bank` },
-                                { id: 'mixed', label: '🔀 Mixed', desc: `${allQuestions.mixed?.length || 0} questions in bank` },
+                                { id: 'kumite', label: '🥊 Kumite', desc: `${allQuestions.kumite?.length || 0} questions in bank` }
                             ] as { id: QuizCategory; label: string; desc: string }[]).map(opt => (
                                 <button
                                     key={opt.id}
@@ -171,6 +205,12 @@ export function QuizModule() {
 
                 <div className="bg-card border rounded-2xl p-6 shadow-sm">
                     <p className="text-base font-medium leading-relaxed">{q.question_text}</p>
+                    {q.rule_reference && (
+                        <div className="mt-4 pt-4 border-t border-border/50 text-xs text-muted-foreground flex items-center gap-2">
+                            <BookOpen className="h-3.5 w-3.5" />
+                            <span>Ref: {q.rule_reference}</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

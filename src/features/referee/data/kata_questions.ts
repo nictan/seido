@@ -1,4 +1,4 @@
-import { QuizQuestion } from '../../types/referee';
+import { QuizQuestion } from '@/types/referee';
 
 export const kataQuestions: QuizQuestion[] = [
     {

@@ -14,8 +14,8 @@ import InstructorDashboard from "./pages/InstructorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import RankManagement from "./pages/RankManagement";
 import { AuthGuard, FeatureGuard } from "./components/auth/AuthGuard";
-import RefereePrepHub from "./pages/RefereePrepHub";
-import RefereeAdmin from "./pages/RefereeAdmin";
+import RefereePrepHub from "./features/referee/pages/RefereePrepHub";
+import RefereeAdmin from "./features/referee/pages/RefereeAdmin";
 
 const queryClient = new QueryClient();
 

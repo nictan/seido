@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../hooks/useAuth';
-import { CheckCircle, XCircle, ChevronDown, ChevronUp, RotateCcw, ClipboardCheck, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { CheckCircle, XCircle, ChevronDown, ChevronUp, RotateCcw, ClipboardCheck, Loader2, BookOpen } from 'lucide-react';
 
 type DBQuestion = {
     id: string;
@@ -115,18 +115,59 @@ export function TheoryExam() {
         setPhase('exam');
     }
 
-    function handleNext() {
+    async function handleNext() {
         setAnswers(prev => {
             const next = [...prev];
             next[currentIndex] = selectedAnswer;
             return next;
         });
+
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(prev => prev + 1);
             setSelectedAnswer(null);
             setElapsedAtQStart(elapsed);
         } else {
             if (timerRef) clearInterval(timerRef);
+
+            // Save history
+            try {
+                const finalAnswers = [...answers];
+                finalAnswers[currentIndex] = selectedAnswer; // Use latest since setState is async
+
+                const finalResults = questions.map((q, i) => ({
+                    question: q,
+                    userAnswer: finalAnswers[i] ?? null,
+                    isCorrect: finalAnswers[i] === q.correct_answer,
+                }));
+                const finalScore = finalResults.filter(r => r.isCorrect).length;
+                const finalPercentage = questions.length > 0 ? finalScore / questions.length : 0;
+                const finalPassed = finalPercentage >= examConfig.exam_pass_threshold;
+
+                await fetch('/api/referee/history', {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${session?.access_token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: 'exam',
+                        category,
+                        score: finalScore,
+                        total_questions: questions.length,
+                        passed: finalPassed,
+                        details: finalResults.map(r => ({
+                            question_id: r.question.id,
+                            question_text: r.question.question_text,
+                            user_answer: r.userAnswer,
+                            correct_answer: r.question.correct_answer,
+                            rule_reference: r.question.rule_reference
+                        }))
+                    })
+                });
+            } catch (err) {
+                console.error("Failed to save history", err);
+            }
+
             setPhase('results');
         }
     }
@@ -258,6 +299,12 @@ export function TheoryExam() {
 
                 <div className="bg-card border rounded-2xl p-6 shadow-sm min-h-[100px] flex flex-col justify-center">
                     <p className="text-base font-medium leading-relaxed">{q.question_text}</p>
+                    {q.rule_reference && (
+                        <div className="mt-4 pt-4 border-t border-border/50 text-xs text-muted-foreground flex items-center gap-2">
+                            <BookOpen className="h-3.5 w-3.5" />
+                            <span>Ref: {q.rule_reference}</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

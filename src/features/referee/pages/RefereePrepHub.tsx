@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../components/layout/Header';
-import { FileText, Bot, HelpCircle, ClipboardCheck, ExternalLink, Loader2 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
-import { QuizModule } from '../components/referee/QuizModule';
-import { TheoryExam } from '../components/referee/TheoryExam';
+import { Header } from '@/components/layout/Header';
+import { FileText, Bot, HelpCircle, ClipboardCheck, ExternalLink, Loader2, History } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { QuizModule } from '../components/QuizModule';
+import { TheoryExam } from '../components/TheoryExam';
+import { HistoryViewer } from '../components/HistoryViewer';
 
-type Tab = 'documents' | 'buddy' | 'quiz' | 'exam';
+type Tab = 'documents' | 'buddy' | 'quiz' | 'exam' | 'history';
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode; available: boolean }[] = [
     { id: 'documents', label: 'Official Documents', icon: <FileText className="h-4 w-4" />, available: true },
     { id: 'buddy', label: 'Study Buddy', icon: <Bot className="h-4 w-4" />, available: false },
     { id: 'quiz', label: 'Quiz', icon: <HelpCircle className="h-4 w-4" />, available: true },
     { id: 'exam', label: 'Theory Exam', icon: <ClipboardCheck className="h-4 w-4" />, available: true },
+    { id: 'history', label: 'History', icon: <History className="h-4 w-4" />, available: true },
 ];
 
 function PlaceholderPanel({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
@@ -160,6 +162,7 @@ export default function RefereePrepHub() {
                 )}
                 {activeTab === 'quiz' && <QuizModule />}
                 {activeTab === 'exam' && <TheoryExam />}
+                {activeTab === 'history' && <HistoryViewer />}
             </main>
         </div>
     );
