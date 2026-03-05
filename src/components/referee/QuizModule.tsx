@@ -171,10 +171,6 @@ export function QuizModule() {
 
                 <div className="bg-card border rounded-2xl p-6 shadow-sm">
                     <p className="text-base font-medium leading-relaxed">{q.question_text}</p>
-                    <div className="flex items-center gap-3 mt-3">
-                        {q.rule_reference && <span className="text-xs font-semibold bg-muted px-2 py-1 rounded">Rule: {q.rule_reference}</span>}
-                        <span className="text-xs text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded" title="Unique Question ID for reporting issues">Ref: {q.id.split('-')[0]}</span>
-                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -194,7 +190,13 @@ export function QuizModule() {
 
                 {selectedAnswer !== null && (
                     <div className={`p-4 rounded-xl border text-sm ${selectedAnswer === q.correct_answer ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-                        <p className="font-semibold mb-1">{selectedAnswer === q.correct_answer ? '✅ Correct!' : '❌ Incorrect'}</p>
+                        <div className="flex justify-between items-start mb-2">
+                            <p className="font-semibold">{selectedAnswer === q.correct_answer ? '✅ Correct!' : '❌ Incorrect'}</p>
+                            <div className="flex items-center gap-2 opacity-80">
+                                {q.rule_reference && <span className="text-xs font-semibold bg-background/50 px-2 py-1 rounded border border-border/50">Rule: {q.rule_reference}</span>}
+                                <span className="text-xs font-mono bg-background/50 px-2 py-1 rounded border border-border/50">Ref: {q.id.split('-')[0]}</span>
+                            </div>
+                        </div>
                         <p>{q.explanation || `Correct answer: ${q.correct_answer ? 'TRUE' : 'FALSE'}`}</p>
                     </div>
                 )}

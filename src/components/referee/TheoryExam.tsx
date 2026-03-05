@@ -258,10 +258,6 @@ export function TheoryExam() {
 
                 <div className="bg-card border rounded-2xl p-6 shadow-sm min-h-[100px] flex flex-col justify-center">
                     <p className="text-base font-medium leading-relaxed">{q.question_text}</p>
-                    <div className="flex items-center gap-3 mt-3">
-                        {q.rule_reference && <span className="text-xs font-semibold bg-muted px-2 py-1 rounded">Rule: {q.rule_reference}</span>}
-                        <span className="text-xs text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded" title="Unique Question ID for reporting issues">Ref: {q.id.split('-')[0]}</span>
-                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -280,8 +276,12 @@ export function TheoryExam() {
                 </div>
 
                 {selectedAnswer !== null && (
-                    <div className={`p-3 rounded-xl border text-sm ${selectedAnswer === q.correct_answer ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-                        {selectedAnswer === q.correct_answer ? '✅ Correct' : `❌ Incorrect — correct answer: ${q.correct_answer ? 'TRUE' : 'FALSE'}`}
+                    <div className={`p-3 rounded-xl border text-sm flex justify-between items-center ${selectedAnswer === q.correct_answer ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                        <span className="font-medium">{selectedAnswer === q.correct_answer ? '✅ Correct' : `❌ Incorrect — correct answer: ${q.correct_answer ? 'TRUE' : 'FALSE'}`}</span>
+                        <div className="flex items-center gap-2 opacity-80">
+                            {q.rule_reference && <span className="text-[10px] font-semibold bg-background/50 px-1.5 py-0.5 rounded border border-border/50">Rule: {q.rule_reference}</span>}
+                            <span className="text-[10px] font-mono bg-background/50 px-1.5 py-0.5 rounded border border-border/50">Ref: {q.id.split('-')[0]}</span>
+                        </div>
                     </div>
                 )}
 
