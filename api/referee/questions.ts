@@ -120,15 +120,21 @@ export default async function handler(request: Request) {
             let nextNum = Number((maxNumResult.rows[0] as any).max) + 1;
 
             let inserted = 0;
-            // Drizzle HTTP has a payload size limit so we do a simple loop, perfectly fine for a few dozen admin records
+            const chunks = [];
+
             for (const q of questions) {
                 if (!q.question_text || q.correct_answer === undefined) continue;
-                await db.execute(sql`
-                    INSERT INTO referee_questions (question_bank_id, question_number, question_text, correct_answer, explanation, rule_reference, category, is_active, display_order)
-                    VALUES (${targetBankId}, ${nextNum}, ${q.question_text}, ${q.correct_answer}, ${q.explanation || null}, ${q.rule_reference || null}, ${q.category || null}, true, ${nextNum})
-                `);
+                chunks.push(sql`(${targetBankId}, ${nextNum}, ${q.question_text}, ${q.correct_answer}, ${q.explanation || null}, ${q.rule_reference || null}, ${q.category || null}, true, ${nextNum})`);
                 nextNum++;
                 inserted++;
+            }
+
+            if (chunks.length > 0) {
+                // Execute a single batched insert to avoid Edge function timeouts and DB rate limits
+                await db.execute(sql`
+                    INSERT INTO referee_questions (question_bank_id, question_number, question_text, correct_answer, explanation, rule_reference, category, is_active, display_order)
+                    VALUES ${sql.join(chunks, sql`, `)}
+                `);
             }
 
             return new Response(JSON.stringify({ success: true, count: inserted, bank_id: targetBankId }), { status: 201 });
