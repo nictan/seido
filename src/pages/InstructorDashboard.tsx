@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Rank, GradingPeriod } from "@/types/database";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Loader2, Calendar, CheckCircle, XCircle, ClipboardList, Pencil, RefreshCw, Search, Filter } from "lucide-react";
+import { Loader2, Calendar, CheckCircle, XCircle, ClipboardList, Pencil, RefreshCw, Search, Filter, Download } from "lucide-react";
 import { EditStudentDialog } from "@/components/instructor/EditStudentDialog";
 
 // Types for fetched data
@@ -32,6 +32,8 @@ type StudentSummary = {
     currentRank: string;
     rankColor: string;
     mobile?: string;
+    waiverAcceptedAt?: string | null;
+    waiverPdfData?: string | null;
 };
 
 export default function InstructorDashboard() {
@@ -77,6 +79,22 @@ export default function InstructorDashboard() {
     const handleEditStudent = (student: StudentSummary) => {
         setEditingStudent(student);
         setEditStudentOpen(true);
+    };
+
+    const downloadWaiverPdf = (student: StudentSummary) => {
+        if (!student.waiverPdfData) return;
+        // waiverPdfData is a data URI — strip the prefix to get raw base64
+        const base64 = student.waiverPdfData.split(',')[1];
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `waiver_${student.firstName}_${student.lastName}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
     };
 
 
@@ -558,6 +576,7 @@ export default function InstructorDashboard() {
                                             <TableHead>Mobile</TableHead>
                                             <TableHead>Dojo</TableHead>
                                             <TableHead>Rank</TableHead>
+                                            <TableHead>Waiver</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -603,10 +622,29 @@ export default function InstructorDashboard() {
                                                             {student.currentRank}
                                                         </div>
                                                     </TableCell>
+                                                    <TableCell>
+                                                        {student.waiverAcceptedAt ? (
+                                                            <Badge variant="default" className="bg-green-600 text-xs">Signed</Badge>
+                                                        ) : (
+                                                            <Badge variant="destructive" className="text-xs">Not Signed</Badge>
+                                                        )}
+                                                    </TableCell>
                                                     <TableCell className="text-right">
-                                                        <Button variant="ghost" size="icon" onClick={() => handleEditStudent(student)} title="Edit Student">
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
+                                                        <div className="flex justify-end items-center gap-1">
+                                                            {student.waiverPdfData && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() => downloadWaiverPdf(student)}
+                                                                    title="Download Signed Waiver PDF"
+                                                                >
+                                                                    <Download className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            <Button variant="ghost" size="icon" onClick={() => handleEditStudent(student)} title="Edit Student">
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </TableCell>
                                                 </TableRow>
                                             ))

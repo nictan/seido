@@ -53,7 +53,9 @@ export default async function handler(request: Request) {
                     mobile: p.mobile,
                     dojo: p.karateProfile?.dojo,
                     currentRank: p.rankHistories[0]?.rank?.displayName || 'Unranked',
-                    rankColor: p.rankHistories[0]?.rank?.beltColor || '#fff'
+                    rankColor: p.rankHistories[0]?.rank?.beltColor || '#fff',
+                    waiverAcceptedAt: p.waiverAcceptedAt ?? null,
+                    waiverPdfData: p.waiverPdfData ?? null,
                 }));
 
             return new Response(JSON.stringify(studentList), {

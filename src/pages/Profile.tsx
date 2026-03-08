@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { DOJOS } from "@/types/database";
-import { ArrowLeft, Save, User as UserIcon, Phone, AlertCircle, FileSignature, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Save, User as UserIcon, Phone, AlertCircle, FileSignature, CheckCircle2, Download } from "lucide-react";
 
 import { MembershipCard } from "@/components/profile/MembershipCard";
 
@@ -637,10 +637,35 @@ const Profile = () => {
                                     </CardDescription>
                                 </div>
                                 {profile.waiver_accepted_at ? (
-                                    <Badge variant="default" className="bg-green-600 flex items-center gap-1">
-                                        <CheckCircle2 className="w-3 h-3" />
-                                        Signed
-                                    </Badge>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="default" className="bg-green-600 flex items-center gap-1">
+                                            <CheckCircle2 className="w-3 h-3" />
+                                            Signed
+                                        </Badge>
+                                        {profile.waiver_pdf_data && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-7 text-xs gap-1.5"
+                                                onClick={() => {
+                                                    const base64 = profile.waiver_pdf_data!.split(',')[1];
+                                                    const binary = atob(base64);
+                                                    const bytes = new Uint8Array(binary.length);
+                                                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                                                    const blob = new Blob([bytes], { type: 'application/pdf' });
+                                                    const url = URL.createObjectURL(blob);
+                                                    const a = document.createElement('a');
+                                                    a.href = url;
+                                                    a.download = `waiver_${profile.first_name}_${profile.last_name}.pdf`;
+                                                    a.click();
+                                                    URL.revokeObjectURL(url);
+                                                }}
+                                            >
+                                                <Download className="w-3 h-3" />
+                                                Download PDF
+                                            </Button>
+                                        )}
+                                    </div>
                                 ) : (
                                     <Badge variant="destructive" className="flex items-center gap-1">
                                         <AlertCircle className="w-3 h-3" />
