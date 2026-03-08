@@ -16,6 +16,7 @@ import RankManagement from "./pages/RankManagement";
 import { AuthGuard, FeatureGuard } from "./components/auth/AuthGuard";
 import RefereePrepHub from "./features/referee/pages/RefereePrepHub";
 import RefereeAdmin from "./features/referee/pages/RefereeAdmin";
+import WaiverPage from "./pages/WaiverPage";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
                 <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
+                    <Route path="/waiver" element={<AuthGuard><WaiverPage /></AuthGuard>} />
                     <Route path="/grading" element={<AuthGuard><FeatureGuard feature="grading"><MyGrading /></FeatureGuard></AuthGuard>} />
                     <Route path="/instructor" element={<AuthGuard><InstructorDashboard /></AuthGuard>} />
                     <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} />

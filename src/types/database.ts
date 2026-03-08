@@ -33,6 +33,10 @@ export type Profile = {
   emergency_contact_email?: string;
   is_admin: boolean;
   is_instructor: boolean;
+  waiver_accepted_at?: string | null;
+  waiver_version?: string | null;
+  waiver_signature?: string | null;
+  waiver_pdf_data?: string | null;
   created_at: string;
   updated_at: string;
   karate_profile?: KarateProfile;

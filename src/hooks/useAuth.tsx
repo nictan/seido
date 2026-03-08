@@ -69,6 +69,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           emergency_contact_relationship: data.emergencyContactRelationship,
           emergency_contact_phone: data.emergencyContactPhone,
           emergency_contact_email: data.emergencyContactEmail,
+          waiver_accepted_at: data.waiverAcceptedAt ?? null,
+          waiver_version: data.waiverVersion ?? null,
+          waiver_signature: data.waiverSignature ?? null,
+          waiver_pdf_data: data.waiverPdfData ?? null,
           created_at: data.createdAt,
           updated_at: data.updatedAt,
           is_admin: data.isAdmin,
@@ -227,6 +231,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       emergency_contact_relationship: 'emergencyContactRelationship',
       emergency_contact_phone: 'emergencyContactPhone',
       emergency_contact_email: 'emergencyContactEmail',
+      waiver_accepted_at: 'waiverAcceptedAt',
+      waiver_version: 'waiverVersion',
+      waiver_signature: 'waiverSignature',
+      waiver_pdf_data: 'waiverPdfData',
       profile_picture_url: 'profilePictureUrl',
     };
     const mapped: any = {};

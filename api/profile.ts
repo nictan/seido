@@ -322,6 +322,13 @@ export default async function handler(request: Request) {
             const body = await request.json();
             const { userId, karateProfile: kpUpdates, rankId: newRankId, ...profileUpdates } = body;
 
+            // Explicitly map waiver fields if they are present
+            // (they come in as camelCase from updateProfile's mapSnakeToCamel)
+            if (body.waiverAcceptedAt !== undefined) profileUpdates.waiverAcceptedAt = body.waiverAcceptedAt;
+            if (body.waiverVersion !== undefined) profileUpdates.waiverVersion = body.waiverVersion;
+            if (body.waiverSignature !== undefined) profileUpdates.waiverSignature = body.waiverSignature;
+            if (body.waiverPdfData !== undefined) profileUpdates.waiverPdfData = body.waiverPdfData;
+
             if (!userId) {
                 return new Response(JSON.stringify({ error: 'Missing userId' }), {
                     status: 400,

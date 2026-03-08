@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { Loader2, RefreshCw, Shield, GraduationCap, Building2, Trash2, Search, Filter, BookOpen } from "lucide-react";
+import { Loader2, RefreshCw, Shield, GraduationCap, Building2, Trash2, Search, Filter, BookOpen, FileSignature } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AdminResetPasswordDialog } from "@/components/admin/AdminResetPasswordDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -26,6 +26,7 @@ type AdminUser = {
     isAdmin: boolean;
     isInstructor: boolean;
     isStudent: boolean;
+    waiverAcceptedAt?: string | null;
 };
 
 export default function AdminDashboard() {
@@ -195,6 +196,34 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleResetWaiver = async (user: AdminUser) => {
+        if (!window.confirm(`Reset waiver for ${user.firstName} ${user.lastName}? They will need to re-sign the waiver.`)) return;
+        try {
+            const res = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({
+                    userId: user.userId,
+                    waiverAcceptedAt: null,
+                    waiverVersion: null,
+                    waiverSignature: null,
+                    waiverPdfData: null,
+                })
+            });
+            if (res.ok) {
+                toast({ title: "Waiver Reset", description: `${user.firstName}'s waiver has been cleared. They will need to re-sign.` });
+                fetchUsers();
+            } else {
+                toast({ title: "Error", description: "Failed to reset waiver.", variant: "destructive" });
+            }
+        } catch {
+            toast({ title: "Error", description: "Unexpected error.", variant: "destructive" });
+        }
+    };
+
     // Derived Statistics
     const totalUsers = users.length;
     const totalInstructors = users.filter(u => u.isInstructor).length;
@@ -356,6 +385,7 @@ export default function AdminDashboard() {
                                         <TableHead>Email</TableHead>
                                         <TableHead>Dojo</TableHead>
                                         <TableHead>Roles</TableHead>
+                                        <TableHead>Waiver</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -381,11 +411,30 @@ export default function AdminDashboard() {
                                                         {user.isStudent && <Badge variant="secondary">Student</Badge>}
                                                     </div>
                                                 </TableCell>
+                                                <TableCell>
+                                                    {user.waiverAcceptedAt ? (
+                                                        <Badge variant="default" className="bg-green-600 text-xs">Signed</Badge>
+                                                    ) : (
+                                                        <Badge variant="destructive" className="text-xs">Not Signed</Badge>
+                                                    )}
+                                                </TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex justify-end items-center gap-2">
                                                         <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)}>
                                                             Edit Roles
                                                         </Button>
+                                                        {user.waiverAcceptedAt && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="text-amber-600 hover:text-amber-800 hover:bg-amber-50"
+                                                                onClick={() => handleResetWaiver(user)}
+                                                                title="Reset Waiver"
+                                                            >
+                                                                <FileSignature className="h-4 w-4 mr-1" />
+                                                                Reset Waiver
+                                                            </Button>
+                                                        )}
                                                         <AdminResetPasswordDialog
                                                             studentId={user.userId}
                                                             studentName={`${user.firstName} ${user.lastName}`}

@@ -34,6 +34,7 @@ export default async function handler(request: Request) {
                     p.is_admin as "isAdmin",
                     p.is_instructor as "isInstructor",
                     p.is_student as "isStudent",
+                    p.waiver_accepted_at as "waiverAcceptedAt",
                     kp.dojo,
                     COALESCE(
                         json_object_agg(uf.feature, uf.enabled) FILTER (WHERE uf.feature IS NOT NULL),

@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { DOJOS } from "@/types/database";
-import { ArrowLeft, Save, User as UserIcon, Phone, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, User as UserIcon, Phone, AlertCircle, FileSignature, CheckCircle2 } from "lucide-react";
 
 import { MembershipCard } from "@/components/profile/MembershipCard";
 
@@ -185,14 +185,13 @@ const Profile = () => {
             } else {
                 toast({
                     title: "Profile Created",
-                    description: "Welcome to Seido! Your profile has been set up.",
+                    description: "Welcome to Seido! Your profile has been set up. Please sign the membership waiver to unlock all features.",
                 });
 
-                // Force onboarding flow completed, navigate to dashboard
-                // If they just created their profile (forced onboarding flow), navigate them to dashboard
+                // Redirect to waiver signing page; remember where they came from
                 const state = location.state as any;
-                const from = state?.from?.pathname || "/";
-                navigate(from, { replace: true });
+                const returnTo = state?.from?.pathname || "/";
+                navigate("/waiver", { replace: true, state: { from: returnTo } });
             }
         } catch (error) {
             toast({
@@ -620,6 +619,49 @@ const Profile = () => {
                                 </div>
                             )}
                         </CardContent>
+                    </Card>
+
+                    {/* Waiver Status Card */}
+                    <Card className="mt-6">
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <FileSignature className="w-5 h-5" />
+                                        Membership Waiver
+                                    </CardTitle>
+                                    <CardDescription>
+                                        {profile.waiver_accepted_at
+                                            ? `Signed on ${new Date(profile.waiver_accepted_at).toLocaleDateString("en-SG", { day: "2-digit", month: "long", year: "numeric" })}`
+                                            : "Required to access grading and other features"}
+                                    </CardDescription>
+                                </div>
+                                {profile.waiver_accepted_at ? (
+                                    <Badge variant="default" className="bg-green-600 flex items-center gap-1">
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        Signed
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="destructive" className="flex items-center gap-1">
+                                        <AlertCircle className="w-3 h-3" />
+                                        Not Signed
+                                    </Badge>
+                                )}
+                            </div>
+                        </CardHeader>
+                        {!profile.waiver_accepted_at && (
+                            <CardContent>
+                                <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                                        <strong>Action Required:</strong> You have not signed the membership waiver. Access to grading and other features will be restricted until you sign.
+                                    </p>
+                                    <Button size="sm" onClick={() => navigate("/waiver")} className="shrink-0">
+                                        <FileSignature className="w-4 h-4 mr-2" />
+                                        Sign Waiver →
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        )}
                     </Card>
 
                     {/* Admin Reassignment Section */}

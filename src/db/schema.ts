@@ -32,6 +32,12 @@ export const profiles = pgTable('profiles', {
 
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+
+    // Waiver
+    waiverAcceptedAt: timestamp('waiver_accepted_at', { withTimezone: true, mode: 'string' }),
+    waiverVersion: text('waiver_version'),
+    waiverSignature: text('waiver_signature'),
+    waiverPdfData: text('waiver_pdf_data'),
 });
 
 export const karateProfiles = pgTable('karate_profiles', {

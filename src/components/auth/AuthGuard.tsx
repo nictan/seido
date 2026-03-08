@@ -20,7 +20,7 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     }
 
     // Force profile completion if the user does not have an active profile
-    // Allow access to /profile to actually complete it
+    // Allow access to /profile and /waiver to complete setup
     const { profile } = useAuth();
     if (user && !profile && location.pathname !== '/profile') {
         return <Navigate to="/profile" state={{ from: location }} replace />;
@@ -33,6 +33,7 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
  * FeatureGuard — wraps a route and redirects to / if the user's profile
  * doesn't have the required feature enabled.
  * Admins (`is_admin`) bypass the guard and always have access.
+ * Users who have not signed the membership waiver are redirected to /waiver.
  */
 export const FeatureGuard = ({
     feature,
@@ -51,8 +52,13 @@ export const FeatureGuard = ({
         );
     }
 
-    // Admins always bypass feature gates
+    // Admins always bypass feature gates (including waiver check)
     if (profile?.is_admin) return <>{children}</>;
+
+    // Block access until waiver is signed
+    if (profile && !profile.waiver_accepted_at) {
+        return <Navigate to="/waiver" state={{ reason: 'waiver_required' }} replace />;
+    }
 
     // If features haven't loaded yet (undefined), treat as allowed to avoid
     // false redirects while the profile is still fetching.
