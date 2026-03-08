@@ -204,24 +204,6 @@ const Profile = () => {
         }
     };
 
-    const handleReassign = async (newUserId: string) => {
-        if (!window.confirm(`Are you sure you want to reassign this profile to user ID: ${newUserId}? You will lose access to it if you are not an admin.`)) return;
-
-        setIsSaving(true);
-        try {
-            const { error } = await updateProfile({ user_id: newUserId });
-            if (error) {
-                toast({ title: "Reassignment Failed", description: error, variant: "destructive" });
-            } else {
-                toast({ title: "Profile Reassigned", description: "The profile has been successfully moved to the new user." });
-                navigate("/");
-            }
-        } catch (error) {
-            toast({ title: "Error", description: "Reassignment failed", variant: "destructive" });
-        } finally {
-            setIsSaving(false);
-        }
-    };
 
     if (loading) {
         return (
@@ -688,46 +670,6 @@ const Profile = () => {
                             </CardContent>
                         )}
                     </Card>
-
-                    {/* Admin Reassignment Section */}
-                    {profile.is_admin && (
-                        <Card className="mt-6 border-destructive/20 bg-destructive/5">
-                            <CardHeader>
-                                <CardTitle className="text-destructive flex items-center gap-2">
-                                    <AlertCircle className="w-5 h-5" />
-                                    Admin: Reassign Profile
-                                </CardTitle>
-                                <CardDescription>Move this profile to a different User ID.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="reassign-userid">New User ID (External Auth ID)</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            id="reassign-userid"
-                                            placeholder="Enter destination user ID"
-                                            defaultValue=""
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    handleReassign((e.target as HTMLInputElement).value);
-                                                }
-                                            }}
-                                        />
-                                        <Button
-                                            variant="destructive"
-                                            onClick={(e) => {
-                                                const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
-                                                handleReassign(input.value);
-                                            }}
-                                        >
-                                            Reassign
-                                        </Button>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">Warning: This action cannot be undone easily. Make sure the User ID is correct.</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
                 </div>
             </main >
         </div >

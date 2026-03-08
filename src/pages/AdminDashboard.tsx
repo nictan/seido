@@ -49,6 +49,7 @@ export default function AdminDashboard() {
         dojo: 'HQ',
         features: { grading: true, referee_prep: false }
     });
+    const [reassignUserId, setReassignUserId] = useState('');
 
     // Site Config State
     const [siteConfig, setSiteConfig] = useState({ default_grading: true, default_referee_prep: false });
@@ -157,6 +158,29 @@ export default function AdminDashboard() {
             }
         } catch (error) {
             toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
+        }
+    };
+
+    const handleReassignUser = async () => {
+        if (!editingUser || !reassignUserId.trim()) return;
+        if (!window.confirm(`Reassign ${editingUser.firstName} ${editingUser.lastName}'s profile to user ID: ${reassignUserId}?\n\nThis cannot be easily undone. Make sure the User ID is correct.`)) return;
+        try {
+            const res = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+                body: JSON.stringify({ userId: editingUser.userId, newUserId: reassignUserId.trim() })
+            });
+            if (res.ok) {
+                toast({ title: "Profile Reassigned", description: `${editingUser.firstName}'s profile has been moved to the new user.` });
+                setEditUserOpen(false);
+                setReassignUserId('');
+                fetchUsers();
+            } else {
+                const data = await res.json();
+                toast({ title: "Reassignment Failed", description: data.error || "Unknown error.", variant: "destructive" });
+            }
+        } catch {
+            toast({ title: "Error", description: "Unexpected error during reassignment.", variant: "destructive" });
         }
     };
 
@@ -589,6 +613,32 @@ export default function AdminDashboard() {
                                     <SelectItem value="SIT">Singapore Institute of Technology (SIT)</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                        <Separator />
+
+                        {/* Danger Zone — Reassign Profile */}
+                        <div className="space-y-2">
+                            <p className="text-xs font-semibold text-destructive uppercase tracking-wider">Danger Zone</p>
+                            <div className="space-y-1">
+                                <Label htmlFor="reassign-userid" className="text-sm">Reassign Profile to User ID</Label>
+                                <p className="text-xs text-muted-foreground">Move this profile to a different authentication account. This action is difficult to undo.</p>
+                                <div className="flex gap-2 pt-1">
+                                    <Input
+                                        id="reassign-userid"
+                                        placeholder="Enter destination auth User ID"
+                                        value={reassignUserId}
+                                        onChange={(e) => setReassignUserId(e.target.value)}
+                                    />
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleReassignUser}
+                                        disabled={!reassignUserId.trim()}
+                                    >
+                                        Reassign
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>
