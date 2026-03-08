@@ -17,6 +17,7 @@ import { AuthGuard, FeatureGuard } from "./components/auth/AuthGuard";
 import RefereePrepHub from "./features/referee/pages/RefereePrepHub";
 import RefereeAdmin from "./features/referee/pages/RefereeAdmin";
 import WaiverPage from "./pages/WaiverPage";
+import AdminWaiverPage from "./pages/AdminWaiverPage";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
                     <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} />
                     <Route path="/admin/ranks" element={<AuthGuard><RankManagement /></AuthGuard>} />
                     <Route path="/admin/referee" element={<AuthGuard><RefereeAdmin /></AuthGuard>} />
+                    <Route path="/admin-waiver" element={<AuthGuard><AdminWaiverPage /></AuthGuard>} />
                     <Route path="/referee" element={<AuthGuard><FeatureGuard feature="referee_prep"><RefereePrepHub /></FeatureGuard></AuthGuard>} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/reset-password" element={<ResetPassword />} />

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/layout/Header";
@@ -64,7 +64,23 @@ export default function WaiverPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [isComplete, setIsComplete] = useState(false);
 
+    // Dynamic waiver content loaded from site_config
+    const [waiverText, setWaiverText] = useState(WAIVER_TEXT);
+    const [waiverVersion, setWaiverVersion] = useState(WAIVER_VERSION);
+    const [waiverLoading, setWaiverLoading] = useState(true);
+
     const from = (location.state as any)?.from || "/";
+
+    useEffect(() => {
+        fetch('/api/admin/waiver')
+            .then(r => r.json())
+            .then(data => {
+                if (data.waiver_text) setWaiverText(data.waiver_text);
+                if (data.waiver_version) setWaiverVersion(data.waiver_version);
+            })
+            .catch(() => { /* keep defaults */ })
+            .finally(() => setWaiverLoading(false));
+    }, []);
 
     const openSignModal = () => setIsSignModalOpen(true);
 
@@ -107,7 +123,7 @@ export default function WaiverPage() {
         // Body text
         doc.setFontSize(9);
         let y = margin + 20;
-        const lines = doc.splitTextToSize(WAIVER_TEXT, maxWidth);
+        const lines = doc.splitTextToSize(waiverText, maxWidth);
         for (const line of lines) {
             if (y > 270) {
                 doc.addPage();
@@ -135,7 +151,7 @@ export default function WaiverPage() {
         y += 5;
         doc.text(`Date: ${new Date().toLocaleDateString("en-SG", { day: "2-digit", month: "long", year: "numeric" })}`, margin, y);
         y += 5;
-        doc.text(`Waiver Version: ${WAIVER_VERSION}`, margin, y);
+        doc.text(`Waiver Version: ${waiverVersion}`, margin, y);
         y += 8;
 
         // Embed signature image
@@ -156,7 +172,7 @@ export default function WaiverPage() {
 
             const { error } = await updateProfile({
                 waiver_accepted_at: new Date().toISOString(),
-                waiver_version: WAIVER_VERSION,
+                waiver_version: waiverVersion,
                 waiver_signature: signatureDataUrl,
                 waiver_pdf_data: pdfDataUri,
             });
@@ -174,7 +190,15 @@ export default function WaiverPage() {
         }
     };
 
-    // ─── Success Screen ────────────────────────────────────────────────────────
+    // ─── Loading waiver text ───────────────────────────────────────────────────
+    if (waiverLoading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <Loader2 className="animate-spin h-8 w-8 text-primary" />
+            </div>
+        );
+    }
+
     if (isComplete) {
         return (
             <div className="min-h-screen bg-background flex flex-col">
@@ -220,7 +244,7 @@ export default function WaiverPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="h-72 overflow-y-auto rounded-md border bg-muted/30 p-4 text-sm leading-relaxed whitespace-pre-line font-mono text-muted-foreground">
-                            {WAIVER_TEXT}
+                            {waiverText}
                         </div>
                     </CardContent>
                 </Card>
