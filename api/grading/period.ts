@@ -1,4 +1,4 @@
-import { db } from '../../src/db/index.js';
+import { db } from '../_db.js';
 import { gradingPeriods, gradingPeriodRanks, profiles } from '../../src/db/schema.js';
 import { eq, desc, and, or } from 'drizzle-orm';
 import { verifyAuth } from '../_auth.js';

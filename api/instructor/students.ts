@@ -1,4 +1,4 @@
-import { db } from '../../src/db/index.js';
+import { db } from '../_db.js';
 import { profiles, karateProfiles, rankHistories, ranks } from '../../src/db/schema.js';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { verifyAuth } from '../_auth.js';
