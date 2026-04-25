@@ -81,20 +81,37 @@ export default function InstructorDashboard() {
         setEditStudentOpen(true);
     };
 
-    const downloadWaiverPdf = (student: StudentSummary) => {
-        if (!student.waiverPdfData) return;
-        // waiverPdfData is a data URI — strip the prefix to get raw base64
-        const base64 = student.waiverPdfData.split(',')[1];
-        const binary = atob(base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        const blob = new Blob([bytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `waiver_${student.firstName}_${student.lastName}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
+    const downloadWaiverPdf = async (student: StudentSummary) => {
+        try {
+            const res = await fetch(`/api/instructor/waiver?studentId=${student.id}`, {
+                headers: { Authorization: `Bearer ${session?.access_token}` }
+            });
+            if (!res.ok) {
+                toast({ title: "Error", description: "Failed to download waiver", variant: "destructive" });
+                return;
+            }
+            const data = await res.json();
+            if (!data.pdfData) {
+                toast({ title: "Not Found", description: "Waiver PDF data is missing", variant: "destructive" });
+                return;
+            }
+            
+            // waiverPdfData is a data URI — strip the prefix to get raw base64
+            const base64 = data.pdfData.split(',')[1];
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const blob = new Blob([bytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = data.fileName || `waiver_${student.firstName}_${student.lastName}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Failed to download waiver", error);
+            toast({ title: "Error", description: "Failed to download waiver", variant: "destructive" });
+        }
     };
 
 
@@ -631,7 +648,7 @@ export default function InstructorDashboard() {
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <div className="flex justify-end items-center gap-1">
-                                                            {student.waiverPdfData && (
+                                                            {student.waiverAcceptedAt && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"

@@ -37,7 +37,6 @@ export default async function handler(request: Request) {
                     p.email,
                     p.mobile,
                     p.waiver_accepted_at as "waiverAcceptedAt",
-                    p.waiver_pdf_data as "waiverPdfData",
                     kp.dojo,
                     r.display_name as "currentRank",
                     r.belt_color as "rankColor"
@@ -59,7 +58,8 @@ export default async function handler(request: Request) {
                 currentRank: row.currentRank || 'Unranked',
                 rankColor: row.rankColor || '#fff',
                 waiverAcceptedAt: row.waiverAcceptedAt ?? null,
-                waiverPdfData: row.waiverPdfData ?? null,
+                // Removed waiverPdfData to prevent payload size errors
+                waiverPdfData: null,
             }));
 
             return new Response(JSON.stringify(studentList), {
