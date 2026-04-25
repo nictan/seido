@@ -28,35 +28,39 @@ export default async function handler(request: Request) {
         }
 
         if (request.method === 'GET') {
-            const students = await db.query.profiles.findMany({
-                with: {
-                    karateProfile: true,
-                    rankHistories: {
-                        where: eq(rankHistories.isCurrent, true),
-                        with: {
-                            rank: true
-                        },
-                        limit: 1
-                    }
-                }
-            });
+            const result = await db.execute(sql`
+                SELECT 
+                    p.id,
+                    p.user_id as "userId",
+                    p.first_name as "firstName",
+                    p.last_name as "lastName",
+                    p.email,
+                    p.mobile,
+                    p.waiver_accepted_at as "waiverAcceptedAt",
+                    p.waiver_pdf_data as "waiverPdfData",
+                    kp.dojo,
+                    r.display_name as "currentRank",
+                    r.belt_color as "rankColor"
+                FROM profiles p
+                INNER JOIN karate_profiles kp ON kp.profile_id = p.id
+                LEFT JOIN rank_histories rh ON rh.profile_id = p.id AND rh.is_current = true
+                LEFT JOIN ranks r ON r.id = rh.rank_id
+                ORDER BY p.first_name ASC
+            `);
 
-            // Filter out profiles that don't have a karateProfile
-            const studentList = students
-                .filter(p => p.karateProfile)
-                .map(p => ({
-                    id: p.id,
-                    userId: p.userId,
-                    firstName: p.firstName,
-                    lastName: p.lastName,
-                    email: p.email,
-                    mobile: p.mobile,
-                    dojo: p.karateProfile?.dojo,
-                    currentRank: p.rankHistories[0]?.rank?.displayName || 'Unranked',
-                    rankColor: p.rankHistories[0]?.rank?.beltColor || '#fff',
-                    waiverAcceptedAt: p.waiverAcceptedAt ?? null,
-                    waiverPdfData: p.waiverPdfData ?? null,
-                }));
+            const studentList = result.rows.map(row => ({
+                id: row.id,
+                userId: row.userId,
+                firstName: row.firstName,
+                lastName: row.lastName,
+                email: row.email,
+                mobile: row.mobile,
+                dojo: row.dojo,
+                currentRank: row.currentRank || 'Unranked',
+                rankColor: row.rankColor || '#fff',
+                waiverAcceptedAt: row.waiverAcceptedAt ?? null,
+                waiverPdfData: row.waiverPdfData ?? null,
+            }));
 
             return new Response(JSON.stringify(studentList), {
                 headers: { 'Content-Type': 'application/json' }
