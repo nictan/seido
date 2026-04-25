@@ -584,9 +584,9 @@ export default function InstructorDashboard() {
                                         {students.filter(student => {
                                             const search = studentSearchQuery.toLowerCase();
                                             const matchesSearch =
-                                                student.firstName.toLowerCase().includes(search) ||
-                                                student.lastName.toLowerCase().includes(search) ||
-                                                student.email.toLowerCase().includes(search) ||
+                                                (student.firstName || '').toLowerCase().includes(search) ||
+                                                (student.lastName || '').toLowerCase().includes(search) ||
+                                                (student.email || '').toLowerCase().includes(search) ||
                                                 (student.mobile || '').toLowerCase().includes(search);
 
                                             const matchesDojo = studentDojoFilter === 'all' || student.dojo === studentDojoFilter;
@@ -602,9 +602,9 @@ export default function InstructorDashboard() {
                                             students.filter(student => {
                                                 const search = studentSearchQuery.toLowerCase();
                                                 const matchesSearch =
-                                                    student.firstName.toLowerCase().includes(search) ||
-                                                    student.lastName.toLowerCase().includes(search) ||
-                                                    student.email.toLowerCase().includes(search) ||
+                                                    (student.firstName || '').toLowerCase().includes(search) ||
+                                                    (student.lastName || '').toLowerCase().includes(search) ||
+                                                    (student.email || '').toLowerCase().includes(search) ||
                                                     (student.mobile || '').toLowerCase().includes(search);
 
                                                 const matchesDojo = studentDojoFilter === 'all' || student.dojo === studentDojoFilter;
@@ -654,7 +654,7 @@ export default function InstructorDashboard() {
                                 <div className="mt-4 text-xs text-muted-foreground text-center">
                                     Showing {students.filter(s => {
                                         const search = studentSearchQuery.toLowerCase();
-                                        const matchesSearch = s.firstName.toLowerCase().includes(search) || s.lastName.toLowerCase().includes(search) || s.email.toLowerCase().includes(search) || (s.mobile || '').toLowerCase().includes(search);
+                                        const matchesSearch = (s.firstName || '').toLowerCase().includes(search) || (s.lastName || '').toLowerCase().includes(search) || (s.email || '').toLowerCase().includes(search) || (s.mobile || '').toLowerCase().includes(search);
                                         const matchesDojo = studentDojoFilter === 'all' || s.dojo === studentDojoFilter;
                                         return matchesSearch && matchesDojo;
                                     }).length} of {students.length} students

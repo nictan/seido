@@ -258,9 +258,9 @@ export default function AdminDashboard() {
         // Search
         const search = searchQuery.toLowerCase();
         const matchesSearch =
-            user.firstName.toLowerCase().includes(search) ||
-            user.lastName.toLowerCase().includes(search) ||
-            user.email.toLowerCase().includes(search);
+            (user.firstName || '').toLowerCase().includes(search) ||
+            (user.lastName || '').toLowerCase().includes(search) ||
+            (user.email || '').toLowerCase().includes(search);
 
         // Role Filter
         let matchesRole = true;
