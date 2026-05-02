@@ -68,7 +68,8 @@ export default function InstructorDashboard() {
 
     // Search & Filter State
     const [appSearchQuery, setAppSearchQuery] = useState('');
-    const [appStatusFilter, setAppStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+    const [appStatusFilter, setAppStatusFilter] = useState<'all' | 'action_required' | 'completed'>('action_required');
+    const [selectedPeriodFilter, setSelectedPeriodFilter] = useState<string>('all');
 
     const [studentSearchQuery, setStudentSearchQuery] = useState('');
     const [studentDojoFilter, setStudentDojoFilter] = useState<'all' | 'HQ' | 'TP' | 'SIT'>('all');
@@ -166,6 +167,14 @@ export default function InstructorDashboard() {
             if (res.ok) {
                 const data = await res.json();
                 setGradingPeriods(data);
+                
+                // Initialize selected period to the active/upcoming period
+                const activePeriod = data.find((p: any) => p.status === 'Upcoming' || p.status === 'In Progress');
+                if (activePeriod) {
+                    setSelectedPeriodFilter(activePeriod.id);
+                } else if (data.length > 0) {
+                    setSelectedPeriodFilter(data[0].id);
+                }
             }
         } catch (error) {
             console.error("Failed to fetch grading periods", error);
@@ -305,21 +314,165 @@ export default function InstructorDashboard() {
         }
     };
 
-    const filteredApplications = applications.filter(app => {
-        // 1. Text Search (Student Name)
-        if (appSearchQuery) {
-            const query = appSearchQuery.toLowerCase();
-            const studentName = `${(app as any).profile?.firstName} ${(app as any).profile?.lastName}`.toLowerCase();
-            if (!studentName.includes(query)) return false;
-        }
+    const renderApplicationsCard = () => {
+        const displayApps = applications.filter(app => {
+            // 1. Period Filter
+            if (selectedPeriodFilter !== 'all' && app.gradingPeriodId !== selectedPeriodFilter) {
+                return false;
+            }
 
-        // 2. Status Filter
-        if (appStatusFilter === 'pending') return app.status === 'Submitted';
-        if (appStatusFilter === 'approved') return app.status === 'Approved';
-        if (appStatusFilter === 'rejected') return app.status === 'Rejected' || app.status === 'Withdrawn' || app.status === 'Void';
+            // 2. Text Search (Student Name)
+            if (appSearchQuery) {
+                const query = appSearchQuery.toLowerCase();
+                const studentName = `${(app as any).profile?.firstName} ${(app as any).profile?.lastName}`.toLowerCase();
+                if (!studentName.includes(query)) return false;
+            }
 
-        return true;
-    });
+            // 3. Status Filter (Action Required vs Completed)
+            const isCompleted = (app.status === 'Approved' && (app.gradingStatus === 'Pass' || app.gradingStatus === 'Fail')) || app.status === 'Rejected' || app.status === 'Withdrawn' || app.status === 'Void';
+            const isActionRequired = app.status === 'Submitted' || (app.status === 'Approved' && app.gradingStatus === 'Pending');
+
+            if (appStatusFilter === 'action_required' && !isActionRequired) return false;
+            if (appStatusFilter === 'completed' && !isCompleted) return false;
+
+            return true;
+        });
+
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Grading Applications</CardTitle>
+                    <CardDescription>Review and manage student grading applications for the selected period.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col xl:flex-row gap-4 mb-4 justify-between items-start xl:items-center">
+                        <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
+                            <Select value={selectedPeriodFilter} onValueChange={setSelectedPeriodFilter}>
+                                <SelectTrigger className="w-full sm:w-[280px]">
+                                    <SelectValue placeholder="Select Grading Period" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Periods</SelectItem>
+                                    {gradingPeriods.map(p => (
+                                        <SelectItem key={p.id} value={p.id}>
+                                            {p.title} ({new Date(p.gradingDate).toLocaleDateString()})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            <div className="relative w-full sm:w-[250px]">
+                                <input
+                                    placeholder="Search student name..."
+                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                    value={appSearchQuery}
+                                    onChange={(e) => setAppSearchQuery(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={fetchApplications}
+                                title="Refresh Applications"
+                            >
+                                <RefreshCw className="h-4 w-4" />
+                            </Button>
+                            <Button
+                                variant={appStatusFilter === 'action_required' ? 'secondary' : 'ghost'}
+                                size="sm"
+                                onClick={() => setAppStatusFilter('action_required')}
+                            >
+                                Action Required
+                            </Button>
+                            <Button
+                                variant={appStatusFilter === 'completed' ? 'secondary' : 'ghost'}
+                                size="sm"
+                                onClick={() => setAppStatusFilter('completed')}
+                            >
+                                Completed
+                            </Button>
+                            <Button
+                                variant={appStatusFilter === 'all' ? 'secondary' : 'ghost'}
+                                size="sm"
+                                onClick={() => setAppStatusFilter('all')}
+                            >
+                                All
+                            </Button>
+                        </div>
+                    </div>
+
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Period</TableHead>
+                                <TableHead>Student</TableHead>
+                                <TableHead>Dojo</TableHead>
+                                <TableHead>Current Rank</TableHead>
+                                <TableHead>Proposed Rank</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {displayApps.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">No applications found.</TableCell>
+                                </TableRow>
+                            ) : displayApps.map((app) => (
+                                <TableRow key={app.id}>
+                                    <TableCell className="font-medium text-xs text-muted-foreground">
+                                        {app.gradingPeriod?.title || 'Unknown'}
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                        {(app as any).profile?.firstName} {(app as any).profile?.lastName}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {(app as any).profile?.karateProfile?.dojo || '-'}
+                                    </TableCell>
+                                    <TableCell>{app.currentRank?.displayName}</TableCell>
+                                    <TableCell>{app.proposedRank?.displayName}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={
+                                            app.status === 'Approved' ? 'default' :
+                                                app.status === 'Rejected' ? 'destructive' : 'secondary'
+                                        }>
+                                            {app.status}
+                                        </Badge>
+                                        {app.gradingStatus && (
+                                            <span className={`ml-2 text-xs font-mono ${(app.gradingStatus === 'Pass' ? 'text-green-600' : 'text-red-600')}`}>
+                                                [{app.gradingStatus}]
+                                            </span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>{new Date(app.createdAt).toLocaleDateString()}</TableCell>
+                                    <TableCell className="text-right space-x-2">
+                                        {app.status === 'Submitted' && (
+                                            <>
+                                                <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => handleApprove(app.id)}>
+                                                    <CheckCircle className="h-4 w-4" />
+                                                </Button>
+                                                <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleReject(app.id)}>
+                                                    <XCircle className="h-4 w-4" />
+                                                </Button>
+                                            </>
+                                        )}
+                                        {app.status === 'Approved' && (
+                                            <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => openGradingDialog(app)} title="Record Result">
+                                                <ClipboardList className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        );
+    };
 
     useEffect(() => {
         if (session?.access_token && (profile?.is_instructor || profile?.is_admin)) {
@@ -422,129 +575,7 @@ export default function InstructorDashboard() {
 
 
                     <TabsContent value="applications">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Grading Applications</CardTitle>
-                                <CardDescription>Review and manage student grading applications.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex flex-col md:flex-row gap-4 mb-4 justify-between items-center">
-                                    <div className="relative w-full md:w-1/3">
-                                        <input
-                                            placeholder="Search student name..."
-                                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                            value={appSearchQuery}
-                                            onChange={(e) => setAppSearchQuery(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={fetchApplications}
-                                            title="Refresh Applications"
-                                        >
-                                            <RefreshCw className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant={appStatusFilter === 'all' ? 'secondary' : 'ghost'}
-                                            size="sm"
-                                            onClick={() => setAppStatusFilter('all')}
-                                        >
-                                            All
-                                        </Button>
-                                        <Button
-                                            variant={appStatusFilter === 'pending' ? 'secondary' : 'ghost'}
-                                            size="sm"
-                                            onClick={() => setAppStatusFilter('pending')}
-                                        >
-                                            Pending
-                                        </Button>
-                                        <Button
-                                            variant={appStatusFilter === 'approved' ? 'secondary' : 'ghost'}
-                                            size="sm"
-                                            onClick={() => setAppStatusFilter('approved')}
-                                        >
-                                            Approved
-                                        </Button>
-                                        <Button
-                                            variant={appStatusFilter === 'rejected' ? 'secondary' : 'ghost'}
-                                            size="sm"
-                                            onClick={() => setAppStatusFilter('rejected')}
-                                        >
-                                            Other
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Period</TableHead>
-                                            <TableHead>Student</TableHead>
-                                            <TableHead>Dojo</TableHead>
-                                            <TableHead>Current Rank</TableHead>
-                                            <TableHead>Proposed Rank</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead className="text-right">Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {filteredApplications.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">No applications found.</TableCell>
-                                            </TableRow>
-                                        ) : filteredApplications.map((app) => (
-                                            <TableRow key={app.id}>
-                                                <TableCell className="font-medium text-xs text-muted-foreground">
-                                                    {app.gradingPeriod?.title || 'Unknown'}
-                                                </TableCell>
-                                                <TableCell className="font-medium">
-                                                    {(app as any).profile?.firstName} {(app as any).profile?.lastName}
-                                                </TableCell>
-                                                <TableCell className="text-muted-foreground">
-                                                    {(app as any).profile?.karateProfile?.dojo || '-'}
-                                                </TableCell>
-                                                <TableCell>{app.currentRank?.displayName}</TableCell>
-                                                <TableCell>{app.proposedRank?.displayName}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant={
-                                                        app.status === 'Approved' ? 'default' :
-                                                            app.status === 'Rejected' ? 'destructive' : 'secondary'
-                                                    }>
-                                                        {app.status}
-                                                    </Badge>
-                                                    {app.gradingStatus && (
-                                                        <span className={`ml-2 text-xs font-mono ${(app.gradingStatus === 'Pass' ? 'text-green-600' : 'text-red-600')}`}>
-                                                            [{app.gradingStatus}]
-                                                        </span>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>{new Date(app.createdAt).toLocaleDateString()}</TableCell>
-                                                <TableCell className="text-right space-x-2">
-                                                    {app.status === 'Submitted' && (
-                                                        <>
-                                                            <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => handleApprove(app.id)}>
-                                                                <CheckCircle className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleReject(app.id)}>
-                                                                <XCircle className="h-4 w-4" />
-                                                            </Button>
-                                                        </>
-                                                    )}
-                                                    {app.status === 'Approved' && (
-                                                        <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => openGradingDialog(app)} title="Record Result">
-                                                            <ClipboardList className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
+                        {renderApplicationsCard()}
                     </TabsContent>
 
                     <TabsContent value="students">
