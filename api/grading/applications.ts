@@ -39,6 +39,8 @@ export default async function handler(request: Request) {
                 where: eq(profiles.userId, requesterId),
             });
             const isInstructor = requesterFullProfile?.isInstructor || false;
+            const isAdmin = requesterFullProfile?.isAdmin || false;
+            const canViewAll = isInstructor || isAdmin;
 
             let queryFilters = [];
 
@@ -51,15 +53,15 @@ export default async function handler(request: Request) {
                     return new Response(JSON.stringify([]), { status: 200 });
                 }
 
-                // Security check: can only view own unless instructor
-                if (requesterId !== userId && !isInstructor) {
+                // Security check: can only view own unless instructor/admin
+                if (requesterId !== userId && !canViewAll) {
                     return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
                 }
 
                 queryFilters.push(eq(gradingApplications.profileId, targetProfile.id));
             } else {
                 // No userId provided.
-                if (!isInstructor) {
+                if (!canViewAll) {
                     // Default behavior for students: only show their own applications.
                     const targetProfile = await db.query.profiles.findFirst({
                         where: eq(profiles.userId, requesterId)
@@ -72,7 +74,7 @@ export default async function handler(request: Request) {
 
                     queryFilters.push(eq(gradingApplications.profileId, targetProfile.id));
                 }
-                // If instructor, we leave queryFilters empty (returns all).
+                // If instructor/admin, we leave queryFilters empty (returns all).
             }
 
             const apps = await db.query.gradingApplications.findMany({
@@ -80,6 +82,10 @@ export default async function handler(request: Request) {
                 with: {
                     gradingPeriod: true,
                     profile: { // Include profile for instructor view
+                        columns: {
+                            waiverPdfData: false,
+                            waiverSignature: false
+                        },
                         with: { karateProfile: true }
                     },
                     currentRank: true,
@@ -88,8 +94,8 @@ export default async function handler(request: Request) {
                 orderBy: [desc(gradingApplications.createdAt)]
             });
 
-            // Strip internalNotes for non-instructors
-            const response = isInstructor
+            // Strip internalNotes for non-instructors/admins
+            const response = canViewAll
                 ? apps
                 : apps.map(({ internalNotes: _, ...app }) => app);
 
@@ -182,9 +188,11 @@ export default async function handler(request: Request) {
                 where: eq(profiles.userId, requesterId),
             });
             const isInstructor = requesterFull?.isInstructor || false;
+            const isAdmin = requesterFull?.isAdmin || false;
+            const canViewAll = isInstructor || isAdmin;
 
             if (status === 'Withdrawn') {
-                if (!isOwner && !isInstructor) {
+                if (!isOwner && !canViewAll) {
                     return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
                 }
 
@@ -193,8 +201,8 @@ export default async function handler(request: Request) {
                     .where(eq(gradingApplications.id, id));
 
             } else {
-                if (!isInstructor) {
-                    return new Response(JSON.stringify({ error: 'Forbidden: Instructor only' }), { status: 403 });
+                if (!canViewAll) {
+                    return new Response(JSON.stringify({ error: 'Forbidden: Instructor/Admin only' }), { status: 403 });
                 }
 
                 if (gradingStatus) {
